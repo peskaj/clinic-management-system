@@ -1,4 +1,5 @@
 # Programowanie aplikacji webowych
+wersja dla studiów niestacjonarnych
 
 ## Wymagania systemowe
 * git
@@ -8,7 +9,7 @@
 
 ### Klonowanie plików do lokalnego katalogu
 ```bash
-git clone https://gitlab.com/mariusz.jarocki/paw2026.git
+git clone https://gitlab.com/mariusz.jarocki/paw2026z.git
 ```
 
 ### Instalacja zależności
