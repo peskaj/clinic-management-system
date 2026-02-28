@@ -1,0 +1,6 @@
+/dist
+/frontend/dist
+node_modules
+.vscode
+.DS_Store
+*.code-workspace
