@@ -1,7 +1,7 @@
 {
   "name": "paw2026",
   "version": "1.0.0",
-  "description": "Programowanie aplikacji webowych 2026",
+  "description": "Programowanie aplikacji webowych 2026z",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,21 +10,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/mariusz.jarocki/paw2026.git"
+    "url": "git+ssh://git@gitlab.com/mariusz.jarocki/paw2026z.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://gitlab.com/mariusz.jarocki/paw2026/issues"
+    "url": "https://gitlab.com/mariusz.jarocki/paw2026z/issues"
   },
-  "homepage": "https://gitlab.com/mariusz.jarocki/paw2026#readme",
+  "homepage": "https://gitlab.com/mariusz.jarocki/paw2026z#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "morgan": "^1.10.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }

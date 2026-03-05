@@ -1,0 +1,19 @@
+/* You can add global styles to this file, and also import other style files */
+
+.snackbar-success .mdc-snackbar__surface {
+  background-color: #388e3c !important;
+  color: #fff !important;
+}
+
+.snackbar-success .mat-mdc-snack-bar-action {
+  color: #fff !important;
+}
+
+.snackbar-error .mdc-snackbar__surface {
+  background-color: #d32f2f !important;
+  color: #fff !important;
+}
+
+.snackbar-error .mat-mdc-snack-bar-action {
+  color: #fff !important;
+}

@@ -1,0 +1,13 @@
+<form class="form-container" [formGroup]="form" (ngSubmit)="post()">
+  <mat-form-field appearance="outline">
+    <mat-label>Imię</mat-label>
+    <input matInput formControlName="firstname" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Nazwisko</mat-label>
+    <input matInput formControlName="lastname" />
+  </mat-form-field>
+
+  <button mat-flat-button type="submit" [disabled]="form.invalid">Dodaj</button>
+</form>

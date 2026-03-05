@@ -1,0 +1,32 @@
+<mat-sidenav-container class="app-root">
+  <mat-sidenav #sidenav mode="side" opened class="app-sidenav">
+    <mat-toolbar color="primary">
+      Menu
+      <span class="toolbar-spacer"></span>
+      <button mat-icon-button (click)="sidenav.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+    </mat-toolbar>
+    <mat-nav-list>
+      <a mat-list-item href="/">
+        <mat-icon matListItemIcon>dashboard</mat-icon>
+        <span matListItemTitle>Strona główna</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      @if (!sidenav.opened) {
+        <button mat-icon-button (click)="sidenav.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+      <span>Programowanie aplikacji webowych 2026</span>
+    </mat-toolbar>
+
+    <div class="content-wrapper">
+      <router-outlet />
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
