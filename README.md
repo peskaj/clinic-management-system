@@ -4,6 +4,7 @@ wersja dla studiów niestacjonarnych
 ## Wymagania systemowe
 * git
 * nodejs v20+
+* angular (instalacja przez `npm install -g @angular/cli`)
 
 ## Jak skorzystać z tego kodu
 
@@ -30,6 +31,5 @@ node dist/index
 
 ### Sprawdzenie działania
 Użyj adresów w przeglądarce:
-* http://localhost:3000
-* http://localhost:3000/hello
-* http://localhost:3000/hello?q=ala+ma+kota
+* http://localhost:3000 (zbudowany frontend)
+* http://localhost:4200 (serwer developerski)
