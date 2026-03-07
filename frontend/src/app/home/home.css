@@ -1,6 +1,23 @@
+.page-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 24px;
+}
+
 .form-container {
   display: flex;
   flex-direction: column;
-  max-width: 320px;
+  width: 320px;
   gap: 8px;
+}
+
+.persons-table {
+  flex: 1;
+}
+
+.persons-table th,
+.persons-table td {
+  padding: 4px 12px;
 }
