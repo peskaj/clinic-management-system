@@ -1,0 +1,33 @@
+.page-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 24px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  gap: 8px;
+}
+
+.persons-table {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.persons-table th,
+.persons-table td {
+  padding: 4px 12px;
+}
+
+.persons-table .mat-column-actions {
+  width: 1px;
+  padding: 0;
+  white-space: nowrap;
+}

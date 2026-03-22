@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { MaterialModule } from './material/material-module';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MaterialModule],
+  imports: [RouterOutlet, RouterLink, MaterialModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
