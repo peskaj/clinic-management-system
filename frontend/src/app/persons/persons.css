@@ -26,8 +26,25 @@
   padding: 4px 12px;
 }
 
-.persons-table .mat-column-actions {
-  width: 1px;
-  padding: 0;
-  white-space: nowrap;
+.form-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.form-actions button {
+  flex: 1;
+}
+
+::ng-deep .btn-delete {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+.mat-row {
+  cursor: pointer;
+}
+
+.row-editing {
+  background-color: #e0e0e0;
 }

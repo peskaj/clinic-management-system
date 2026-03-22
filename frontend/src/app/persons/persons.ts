@@ -28,7 +28,8 @@ export class Persons implements OnInit {
   });
 
   dataSource = new MatTableDataSource<Person>();
-  displayedColumns = ['id', 'firstname', 'lastname', 'actions'];
+  displayedColumns = ['id', 'firstname', 'lastname'];
+  editingId: number | null = null;
 
   constructor(private http: HttpClient, private snackBar: MatSnackBar) {}
 
@@ -50,9 +51,39 @@ export class Persons implements OnInit {
     });
   }
 
-  delete(id: number): void {
-    this.http.delete(`/api/person`, { params: { id } }).subscribe({
+  selectRow(person: Person): void {
+    this.editingId = person.id;
+    this.form.setValue({ firstname: person.firstname, lastname: person.lastname });
+  }
+
+  cancel(): void {
+    this.editingId = null;
+    this.form.reset();
+  }
+
+  delete(): void {
+    this.http.delete(`/api/person`, { params: { id: this.editingId! } }).subscribe({
       next: (res) => {
+        this.cancel();
+        this.loadData();
+        this.snackBar.open(JSON.stringify(res), 'Zamknij', {
+          duration: 5000,
+          panelClass: 'snackbar-success'
+        });
+      },
+      error: (e) => {
+        this.snackBar.open(JSON.stringify(e.error), 'Zamknij', {
+          duration: 5000,
+          panelClass: 'snackbar-error'
+        });
+      }
+    });
+  }
+
+  modify(): void {
+    this.http.put('/api/person', { id: this.editingId, ...this.form.value }).subscribe({
+      next: (res) => {
+        this.cancel();
         this.loadData();
         this.snackBar.open(JSON.stringify(res), 'Zamknij', {
           duration: 5000,

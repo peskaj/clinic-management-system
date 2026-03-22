@@ -57,6 +57,11 @@ app.delete(config.api + '/person', (req: Request, res: Response) => {
     res.json({ deleted });
 });
 
+// nieobsłużone endpointy
+app.use(config.api, (_req: Request, res: Response, _next: NextFunction) => {
+    res.status(404).json({ error: 'endpoint not handled' });
+});
+
 // obsługa błędów w Express - musi być ostatnim handlerem
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     res.status(400).json({ error: err.message });
