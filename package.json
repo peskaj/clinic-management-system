@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --watch .env src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "createdb": "node tools/createdb.mjs"
   },
   "repository": {
     "type": "git",
@@ -21,12 +22,16 @@
   },
   "homepage": "https://gitlab.com/mariusz.jarocki/paw2026z#readme",
   "dependencies": {
+    "@faker-js/faker": "^10.3.0",
     "express": "^5.2.1",
-    "morgan": "^1.10.1"
+    "morgan": "^1.10.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
+    "@types/sqlite3": "^3.1.11",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
