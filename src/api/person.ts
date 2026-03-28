@@ -2,53 +2,100 @@ import { Router, Request, Response } from 'express';
 import { Database } from 'sqlite';
 
 class Person {
-    private static seq: number = 0;
     id?: number;
-    firstname?: string;
-    lastname?: string;
+    firstname: string;
+    lastname: string;
+    email?: string;
+    birthdate?: string;
+
     constructor(data: unknown) {
-        if(typeof data !== 'object' || Array.isArray(data) || data === null) {
+        if (typeof data !== 'object' || Array.isArray(data) || data === null) {
             throw new Error('Person musi być pojedynczym obiektem');
         }
         const obj = data as Record<string, any>;
-        if(typeof obj.firstname !== 'string' 
-           || (this.firstname = obj.firstname.trim()).length == 0
-           || typeof obj.lastname !== 'string'
-           || (this.lastname = obj.lastname.trim()).length == 0) {
-            throw new Error('Person musi mieć firstname i lastname');
+
+        if (typeof obj.firstname !== 'string' || obj.firstname.trim().length === 0) {
+            throw new Error('Pole firstname jest wymagane i nie może być puste');
         }
-        this.id = ++Person.seq;
+        if (typeof obj.lastname !== 'string' || obj.lastname.trim().length === 0) {
+            throw new Error('Pole lastname jest wymagane i nie może być puste');
+        }
+        this.firstname = obj.firstname.trim();
+        this.lastname = obj.lastname.trim();
+
+        if (obj.email !== undefined && obj.email !== null && obj.email !== '') {
+            if (typeof obj.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(obj.email.trim())) {
+                throw new Error('Pole email ma nieprawidłowy format');
+            }
+            this.email = obj.email.trim();
+        }
+
+        if (obj.birthdate !== undefined && obj.birthdate !== null && obj.birthdate !== '') {
+            if (typeof obj.birthdate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(obj.birthdate.trim())
+                || isNaN(Date.parse(obj.birthdate.trim()))) {
+                throw new Error('Pole birthdate musi mieć format YYYY-MM-DD');
+            }
+            this.birthdate = obj.birthdate.trim();
+        }
+
+        if (typeof obj.id === 'number') {
+            this.id = obj.id;
+        }
     }
 }
-
-const persons: Person[] = [];
 
 export function personRouter(connection: Database): Router {
     const router = Router();
 
-    router.post('/', (req: Request, res: Response) => {
-        const person: Person = new Person(req.body);
-        persons.push(person);
-        res.json(person);
+    router.post('/', async (req: Request, res: Response, next) => {
+        try {
+            const person = new Person(req.body);
+            const created = await connection.get(
+                'INSERT INTO persons (firstname, lastname, email, birthdate) VALUES (?, ?, ?, ?) RETURNING *',
+                person.firstname, person.lastname, person.email ?? null, person.birthdate ?? null
+            );
+            res.json(created);
+        } catch (err) {
+            next(err);
+        }
     });
 
-    router.get('/', (_req: Request, res: Response) => {
+    router.put('/', async (req: Request, res: Response, next) => {
+        try {
+            const person = new Person(req.body);
+            if (!person.id) {
+                throw new Error('Pole id jest wymagane do modyfikacji rekordu');
+            }
+            const updated = await connection.get(`
+                UPDATE persons
+                SET firstname = ?, lastname = ?, email = ?, birthdate = ?
+                WHERE id = ?
+                RETURNING *
+            `, person.firstname, person.lastname, person.email ?? null, person.birthdate ?? null, person.id);
+            if (!updated) {
+                throw new Error(`Nie znaleziono osoby o id=${person.id}`);
+            }
+            res.json(updated);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    router.get('/', async (_req: Request, res: Response) => {
+        const persons = await connection.all('SELECT * FROM persons');
         res.json(persons);
     });
 
-    router.delete('/', (req: Request, res: Response) => {
-        let deleted: number = 0;
+    router.delete('/', async (req: Request, res: Response) => {
+        let deleted: any = {};
         const id = req.query.id ? parseInt(req.query.id as string) : 0;
-        if(id) {
-            const index: number = persons.findIndex(el => el.id == id);
-            if(index >= 0) {
-                persons.splice(index, 1);
-                deleted = 1;
-            }
+        if (id) {
+            deleted = await connection.get(`
+                DELETE FROM persons WHERE id = ? RETURNING *
+            `, id);
         }
-        res.json({ deleted });
+        res.json(deleted);
     });
-
 
     return router;
 }
