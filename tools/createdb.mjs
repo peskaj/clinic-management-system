@@ -4,7 +4,7 @@ import { fakerPL as faker } from '@faker-js/faker';
 
 const config = {
     dbfilename: './data/app.sqlite3',
-    FAKEPERSONS: 100
+    FAKEPERSONS: 10000
 };
 
 console.log('createdb');

@@ -36,6 +36,21 @@
     }
   </form>
 
+  <div class="table-column">
+  <div class="pagination-bar">
+    <span class="count-label">Łącznie: {{ count }}</span>
+    <form [formGroup]="paginationForm" class="pagination-form">
+      <mat-form-field appearance="outline" class="pagination-field">
+        <mat-label>Offset</mat-label>
+        <input matInput type="number" formControlName="offset" min="0" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="pagination-field">
+        <mat-label>Limit</mat-label>
+        <input matInput type="number" formControlName="limit" min="1" />
+      </mat-form-field>
+    </form>
+  </div>
+
   <div class="table-wrapper">
   <table mat-table [dataSource]="dataSource" class="persons-table mat-elevation-z2">
     <ng-container matColumnDef="id">
@@ -68,5 +83,6 @@
         (click)="selectRow(row)"
         [class.row-editing]="row.id === editingId"></tr>
   </table>
+  </div>
   </div>
 </div>

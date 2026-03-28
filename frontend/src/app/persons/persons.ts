@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, AbstractControl, ValidationErrors, Validators } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -28,7 +30,7 @@ function optionalEmail(control: AbstractControl): ValidationErrors | null {
   templateUrl: './persons.html',
   styleUrl: './persons.css'
 })
-export class Persons implements OnInit {
+export class Persons implements OnInit, OnDestroy {
   form = new FormGroup({
     firstname: new FormControl('', [notBlank]),
     lastname: new FormControl('', [notBlank]),
@@ -36,14 +38,30 @@ export class Persons implements OnInit {
     birthdate: new FormControl<Date | null>(null),
   });
 
+  paginationForm = new FormGroup({
+    offset: new FormControl(0),
+    limit: new FormControl(10),
+  });
+
   dataSource = new MatTableDataSource<Person>();
   displayedColumns = ['id', 'firstname', 'lastname', 'email', 'birthdate'];
   editingId: number | null = null;
+  count: number = 0;
+
+  private paginationSub!: Subscription;
 
   constructor(private http: HttpClient, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadData();
+    this.paginationSub = this.paginationForm.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged((a, b) => a.offset === b.offset && a.limit === b.limit),
+    ).subscribe(() => this.loadData());
+  }
+
+  ngOnDestroy(): void {
+    this.paginationSub.unsubscribe();
   }
 
   private toISODate(date: Date | null): string | null {
@@ -65,9 +83,11 @@ export class Persons implements OnInit {
   }
 
   loadData(): void {
-    this.http.get('/api/person').subscribe({
+    const { offset, limit } = this.paginationForm.value;
+    this.http.get('/api/person', { params: { offset: offset ?? 0, limit: limit ?? 10 } }).subscribe({
       next: (res) => {
-        this.dataSource.data = res as Person[];
+        this.dataSource.data = (res as any).data as Person[];
+        this.count = (res as any).count;
       },
       error: (e) => {
         this.snackBar.open(JSON.stringify(e.error), 'Zamknij', {

@@ -81,9 +81,16 @@ export function personRouter(connection: Database): Router {
         }
     });
 
-    router.get('/', async (_req: Request, res: Response) => {
-        const persons = await connection.all('SELECT * FROM persons');
-        res.json(persons);
+    router.get('/', async (req: Request, res: Response) => {
+        const count = await connection.get('SELECT COUNT(*) AS count FROM persons');
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+        const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+        const data = await connection.all(`
+            SELECT * FROM persons
+            LIMIT ?
+            OFFSET ?
+        `, limit, offset);
+        res.json({ count: count.count, data });
     });
 
     router.delete('/', async (req: Request, res: Response) => {
