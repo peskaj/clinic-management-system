@@ -1,9 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 
 import { personRouter } from './api/person'
+import { projectRouter } from './api/project';
 
 const config = {
     port: 3000,
@@ -19,13 +19,11 @@ app.use(express.json());
 
 async function main() {
     // połączenie z bazą danych
-    const connection = await open({
-        filename: config.dbfilename,
-        driver: sqlite3.Database
-    });
-    await connection.run('PRAGMA foreign_keys = ON');
+    const connection = new DatabaseSync(config.dbfilename);
+    connection.exec('PRAGMA foreign_keys = ON');
 
     app.use(config.api + '/person', personRouter(connection));
+    app.use(config.api + '/project', projectRouter(connection));
 
     // nieobsłużone endpointy
     app.use(config.api, (_req: Request, res: Response, _next: NextFunction) => {

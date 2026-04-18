@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Database } from 'sqlite';
+import { DatabaseSync } from 'node:sqlite';
 
 class Person {
     id?: number;
@@ -44,16 +44,15 @@ class Person {
     }
 }
 
-export function personRouter(connection: Database): Router {
+export function personRouter(connection: DatabaseSync): Router {
     const router = Router();
 
     router.post('/', async (req: Request, res: Response, next) => {
         try {
             const person = new Person(req.body);
-            const created = await connection.get(
-                'INSERT INTO persons (firstname, lastname, email, birthdate) VALUES (?, ?, ?, ?) RETURNING *',
-                person.firstname, person.lastname, person.email ?? null, person.birthdate ?? null
-            );
+            const created = connection.prepare(
+                'INSERT INTO persons (firstname, lastname, email, birthdate) VALUES (?, ?, ?, ?) RETURNING *'
+            ).get(person.firstname, person.lastname, person.email ?? null, person.birthdate ?? null);
             res.json(created);
         } catch (err) {
             next(err);
@@ -66,12 +65,12 @@ export function personRouter(connection: Database): Router {
             if (!person.id) {
                 throw new Error('Pole id jest wymagane do modyfikacji rekordu');
             }
-            const updated = await connection.get(`
+            const updated = connection.prepare(`
                 UPDATE persons
                 SET firstname = ?, lastname = ?, email = ?, birthdate = ?
                 WHERE id = ?
                 RETURNING *
-            `, person.firstname, person.lastname, person.email ?? null, person.birthdate ?? null, person.id);
+            `).get(person.firstname, person.lastname, person.email ?? null, person.birthdate ?? null, person.id);
             if (!updated) {
                 throw new Error(`Nie znaleziono osoby o id=${person.id}`);
             }
@@ -82,24 +81,24 @@ export function personRouter(connection: Database): Router {
     });
 
     router.get('/', async (req: Request, res: Response) => {
-        const count = await connection.get('SELECT COUNT(*) AS count FROM persons');
+        const count = connection.prepare('SELECT COUNT(*) AS count FROM persons').get() as { count: number };
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
         const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-        const data = await connection.all(`
+        const data = connection.prepare(`
             SELECT * FROM persons
             LIMIT ?
             OFFSET ?
-        `, limit, offset);
+        `).all(limit, offset);
         res.json({ count: count.count, data });
     });
 
     router.delete('/', async (req: Request, res: Response) => {
-        let deleted: any = {};
+        let deleted: unknown = {};
         const id = req.query.id ? parseInt(req.query.id as string) : 0;
         if (id) {
-            deleted = await connection.get(`
+            deleted = connection.prepare(`
                 DELETE FROM persons WHERE id = ? RETURNING *
-            `, id);
+            `).get(id);
         }
         res.json(deleted);
     });

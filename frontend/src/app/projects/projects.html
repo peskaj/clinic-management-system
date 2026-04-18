@@ -1,0 +1,80 @@
+<div class="page-container">
+  <form class="form-container" [formGroup]="form" (ngSubmit)="post()">
+    <mat-form-field appearance="outline">
+      <mat-label>Nazwa projektu</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Skrócona nazwa</mat-label>
+      <input matInput formControlName="shortname" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Kierownik projektu</mat-label>
+      <mat-select formControlName="manager_id">
+        <mat-option [value]="null">--- Brak ---</mat-option>
+        @for (person of persons; track person.id) {
+          <mat-option [value]="person.id">
+            {{ person.firstname }} {{ person.lastname }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (editingId === null) {
+      <button mat-flat-button type="submit" [disabled]="form.invalid">Dodaj</button>
+    } @else {
+      <div class="form-actions">
+        <button mat-flat-button type="button" color="primary" [disabled]="form.invalid" (click)="modify()">Modyfikuj</button>
+        <button mat-flat-button type="button" class="btn-delete" (click)="delete()">Usuń</button>
+        <button mat-stroked-button type="button" (click)="cancel()">Anuluj</button>
+      </div>
+    }
+  </form>
+
+  <div class="table-column">
+    <div class="pagination-bar">
+      <span class="count-label">Łącznie: {{ count }}</span>
+      <form [formGroup]="paginationForm" class="pagination-form">
+        <mat-form-field appearance="outline" class="pagination-field">
+          <mat-label>Offset</mat-label>
+          <input matInput type="number" formControlName="offset" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="pagination-field">
+          <mat-label>Limit</mat-label>
+          <input matInput type="number" formControlName="limit" min="1" />
+        </mat-form-field>
+      </form>
+    </div>
+
+    <div class="table-wrapper">
+      <table mat-table [dataSource]="dataSource" class="projects-table mat-elevation-z2">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let p">{{ p.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nazwa</th>
+          <td mat-cell *matCellDef="let p">{{ p.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="shortname">
+          <th mat-header-cell *matHeaderCellDef>Skrót</th>
+          <td mat-cell *matCellDef="let p">{{ p.shortname }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="manager_id">
+          <th mat-header-cell *matHeaderCellDef>Kierownik</th>
+          <td mat-cell *matCellDef="let p">{{ getManagerName(p.manager_id) }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+            (click)="selectRow(row)"
+            [class.row-editing]="row.id === editingId"></tr>
+      </table>
+    </div>
+  </div>
+</div>
