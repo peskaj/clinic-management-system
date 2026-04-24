@@ -52,6 +52,10 @@
   width: 100px;
 }
 
+.filter-field {
+  width: 180px;
+}
+
 .table-wrapper {
   flex: 1;
   min-width: 0;

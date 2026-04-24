@@ -6,7 +6,7 @@ import { personRouter } from './api/person'
 import { projectRouter } from './api/project';
 
 const config = {
-    port: 3000,
+    port: 4000,
     frontend: 'frontend/dist/frontend/browser',
     api: '/api',
     dbfilename: 'data/app.sqlite3'

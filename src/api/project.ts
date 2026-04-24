@@ -72,15 +72,25 @@ export function projectRouter(connection: DatabaseSync): Router {
     });
 
     router.get('/', async (req: Request, res: Response) => {
-        const count = connection.prepare('SELECT COUNT(*) AS count FROM projects').get() as { count: number };
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
         const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-        const data = connection.prepare(`
-            SELECT * FROM projects
-            LIMIT ?
-            OFFSET ?
-        `).all(limit, offset);
-        res.json({ count: count.count, data });
+        const filter = req.query.filter ? `${(req.query.filter as string).trim()}%` : null;
+        const total = (connection.prepare('SELECT COUNT(*) AS count FROM projects').get() as { count: number }).count;
+        let filtered: number;
+        let data: unknown[];
+        if (filter) {
+            filtered = (connection.prepare(
+                'SELECT COUNT(*) AS count FROM projects WHERE name LIKE ? OR shortname LIKE ?'
+            ).get(filter, filter) as { count: number }).count;
+            data = connection.prepare(`
+                SELECT * FROM projects WHERE name LIKE ? OR shortname LIKE ?
+                LIMIT ? OFFSET ?
+            `).all(filter, filter, limit, offset);
+        } else {
+            filtered = total;
+            data = connection.prepare('SELECT * FROM projects LIMIT ? OFFSET ?').all(limit, offset);
+        }
+        res.json({ total, filtered, data });
     });
 
     router.delete('/', async (req: Request, res: Response) => {

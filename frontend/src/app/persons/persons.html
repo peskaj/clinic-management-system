@@ -38,7 +38,7 @@
 
   <div class="table-column">
   <div class="pagination-bar">
-    <span class="count-label">Łącznie: {{ count }}</span>
+    <span class="count-label">Łącznie: {{ filtered }}/{{ total }}</span>
     <form [formGroup]="paginationForm" class="pagination-form">
       <mat-form-field appearance="outline" class="pagination-field">
         <mat-label>Offset</mat-label>
@@ -47,6 +47,10 @@
       <mat-form-field appearance="outline" class="pagination-field">
         <mat-label>Limit</mat-label>
         <input matInput type="number" formControlName="limit" min="1" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="pagination-field filter-field">
+        <mat-label>Filtr</mat-label>
+        <input matInput formControlName="filter" />
       </mat-form-field>
     </form>
   </div>

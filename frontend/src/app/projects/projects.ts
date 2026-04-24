@@ -41,12 +41,14 @@ export class Projects implements OnInit, OnDestroy {
   paginationForm = new FormGroup({
     offset: new FormControl(0),
     limit: new FormControl(10),
+    filter: new FormControl(''),
   });
 
   dataSource = new MatTableDataSource<Project>();
   displayedColumns = ['id', 'name', 'shortname', 'manager_id'];
   editingId: number | null = null;
-  count: number = 0;
+  filtered: number = 0;
+  total: number = 0;
   persons: Person[] = [];
 
   private paginationSub!: Subscription;
@@ -58,7 +60,7 @@ export class Projects implements OnInit, OnDestroy {
     this.loadData();
     this.paginationSub = this.paginationForm.valueChanges.pipe(
       debounceTime(300),
-      distinctUntilChanged((a, b) => a.offset === b.offset && a.limit === b.limit),
+      distinctUntilChanged((a, b) => a.offset === b.offset && a.limit === b.limit && a.filter === b.filter),
     ).subscribe(() => this.loadData());
   }
 
@@ -90,11 +92,14 @@ export class Projects implements OnInit, OnDestroy {
   }
 
   loadData(): void {
-    const { offset, limit } = this.paginationForm.value;
-    this.http.get('/api/project', { params: { offset: offset ?? 0, limit: limit ?? 10 } }).subscribe({
+    const { offset, limit, filter } = this.paginationForm.value;
+    const params: Record<string, any> = { offset: offset ?? 0, limit: limit ?? 10 };
+    if (filter) params['filter'] = filter;
+    this.http.get('/api/project', { params }).subscribe({
       next: (res) => {
         this.dataSource.data = (res as any).data as Project[];
-        this.count = (res as any).count;
+        this.filtered = (res as any).filtered;
+        this.total = (res as any).total;
       },
       error: (e) => {
         this.snackBar.open(JSON.stringify(e.error), 'Zamknij', {

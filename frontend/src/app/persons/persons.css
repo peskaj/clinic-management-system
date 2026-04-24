@@ -16,6 +16,7 @@
   width: 320px;
   flex-shrink: 0;
   gap: 8px;
+  overflow-x: hidden;
   overflow-y: auto;
   padding-top: 12px;
 }
@@ -65,6 +66,10 @@
 .persons-table th,
 .persons-table td {
   padding: 4px 12px;
+}
+
+.filter-field {
+  width: 180px;
 }
 
 .form-actions {
