@@ -23,8 +23,18 @@
   "homepage": "https://gitlab.com/mariusz.jarocki/paw2026z#readme",
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
+    "@types/connect-sqlite3": "^0.9.6",
+    "@types/express-session": "^1.19.0",
+    "@types/passport": "^1.0.17",
+    "@types/passport-local": "^1.0.38",
+    "bcryptjs": "^3.0.3",
+    "connect-sqlite": "^0.0.1",
+    "connect-sqlite3": "^0.9.16",
     "express": "^5.2.1",
-    "morgan": "^1.10.1"
+    "express-session": "^1.19.0",
+    "morgan": "^1.10.1",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

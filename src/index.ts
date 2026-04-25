@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import { DatabaseSync } from 'node:sqlite';
 
+import { initAuth } from './auth';
+import { authRouter } from './api/auth';
 import { personRouter } from './api/person'
 import { projectRouter } from './api/project';
 
@@ -9,7 +11,12 @@ const config = {
     port: 4000,
     frontend: 'frontend/dist/frontend/browser',
     api: '/api',
-    dbfilename: 'data/app.sqlite3'
+    dbfilename: 'data/app.sqlite3',
+    sysDbFilename: 'data/sys.sqlite3',
+    sessionSecret: 'tajne!',
+    sessionMaxAge: 86400000,
+    adminPassword: 'Admin123',
+    userPassword: 'User123'
 };
 
 const app = express();
@@ -18,7 +25,12 @@ app.use(express.static(config.frontend));
 app.use(express.json());
 
 async function main() {
-    // połączenie z bazą danych
+
+    // inicjalizacja mechanizmu autoryzacji
+    await initAuth(app, config);
+    app.use(config.api + '/auth', authRouter());
+
+    // połączenie z aplikacyjną bazą danych
     const connection = new DatabaseSync(config.dbfilename);
     connection.exec('PRAGMA foreign_keys = ON');
 

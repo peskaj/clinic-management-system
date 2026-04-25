@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { DatabaseSync } from 'node:sqlite';
-
+import { requireAuth } from '../auth';
 class Person {
     id?: number;
     firstname: string;
@@ -47,7 +47,7 @@ class Person {
 export function personRouter(connection: DatabaseSync): Router {
     const router = Router();
 
-    router.post('/', async (req: Request, res: Response, next) => {
+    router.post('/', requireAuth(0), async (req: Request, res: Response, next) => {
         try {
             const person = new Person(req.body);
             const created = connection.prepare(
@@ -59,7 +59,7 @@ export function personRouter(connection: DatabaseSync): Router {
         }
     });
 
-    router.put('/', async (req: Request, res: Response, next) => {
+    router.put('/', requireAuth(0), async (req: Request, res: Response, next) => {
         try {
             const person = new Person(req.body);
             if (!person.id) {
@@ -80,7 +80,7 @@ export function personRouter(connection: DatabaseSync): Router {
         }
     });
 
-    router.get('/', async (req: Request, res: Response) => {
+    router.get('/', requireAuth(0, 1), async (req: Request, res: Response) => {
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
         const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
         const filter = req.query.filter ? `${(req.query.filter as string).trim()}%` : null;
@@ -102,7 +102,7 @@ export function personRouter(connection: DatabaseSync): Router {
         res.json({ total, filtered, data });
     });
 
-    router.delete('/', async (req: Request, res: Response) => {
+    router.delete('/', requireAuth(0), async (req: Request, res: Response) => {
         let deleted: unknown = {};
         const id = req.query.id ? parseInt(req.query.id as string) : 0;
         if (id) {
