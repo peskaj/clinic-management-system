@@ -1,1 +1,14 @@
-Tu kiedyś coś będzie
+@if (auth.currentUser() === undefined) {
+  <div class="info-card">
+    <p>Ładowanie...</p>
+  </div>
+} @else if (auth.currentUser(); as user) {
+  <div class="info-card">
+    <p>Zalogowany jako <strong>{{ user.username }}</strong></p>
+    <p>Role: <strong>{{ user.roles.length ? user.roles.join(', ') : 'brak' }}</strong></p>
+  </div>
+} @else {
+  <div class="info-card">
+    <i>Nie jesteś zalogowany.</i>
+  </div>
+}

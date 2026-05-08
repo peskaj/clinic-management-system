@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MaterialModule } from '../material/material-module';
 import { AuthService } from './auth.service';
@@ -13,6 +14,7 @@ import { AuthService } from './auth.service';
 export class AuthPanel {
   protected auth = inject(AuthService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
 
   protected form = new FormGroup({
     username: new FormControl('', [Validators.required]),
@@ -43,6 +45,7 @@ export class AuthPanel {
       next: () => {
         this.auth.currentUser.set(null);
         this.loading = false;
+        this.router.navigateByUrl('/');
       },
       error: () => {
         this.loading = false;

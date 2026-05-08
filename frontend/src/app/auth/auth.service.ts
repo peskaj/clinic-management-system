@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { tap, catchError, of } from 'rxjs';
 
 export interface User {
   id: number;
@@ -11,15 +12,13 @@ export interface User {
 export class AuthService {
   readonly currentUser = signal<User | null | undefined>(undefined);
 
-  constructor(private http: HttpClient) {
-    this.refresh();
-  }
+  constructor(private http: HttpClient) {}
 
   refresh() {
-    this.http.get<User | null>('/api/auth').subscribe({
-      next: (user) => this.currentUser.set(user),
-      error: () => this.currentUser.set(null),
-    });
+    return this.http.get<User | null>('/api/auth').pipe(
+      tap(user => this.currentUser.set(user)),
+      catchError(() => { this.currentUser.set(null); return of(null); }),
+    );
   }
 
   login(username: string, password: string) {
