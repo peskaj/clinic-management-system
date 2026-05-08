@@ -1,4 +1,5 @@
 <div class="page-container">
+  @if (auth.currentUser()?.roles?.includes(0)) {
   <form class="form-container" [formGroup]="form" (ngSubmit)="post()">
     <mat-form-field appearance="outline">
       <mat-label>Nazwa projektu</mat-label>
@@ -32,6 +33,7 @@
       </div>
     }
   </form>
+  }
 
   <div class="table-column">
     <div class="pagination-bar">

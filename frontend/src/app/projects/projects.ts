@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -7,6 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { MaterialModule } from '../material/material-module';
 import { MatOptionModule } from '@angular/material/core';
+import { AuthService } from '../auth/auth.service';
 
 interface Project {
   id: number;
@@ -52,6 +53,8 @@ export class Projects implements OnInit, OnDestroy {
   persons: Person[] = [];
 
   private paginationSub!: Subscription;
+
+  protected auth = inject(AuthService);
 
   constructor(private http: HttpClient, private snackBar: MatSnackBar) {}
 
