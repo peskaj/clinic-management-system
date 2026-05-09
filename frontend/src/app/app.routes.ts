@@ -23,4 +23,11 @@ export const routes: Routes = [
     loadComponent: () => import('./projects/projects').then(m => m.Projects),
     data: { roles: [0, 1], icon: 'work' },
   },
+  {
+    path: 'settings',
+    title: 'Ustawienia',
+    canMatch: [roleGuard],
+    loadComponent: () => import('./settings/settings').then(m => m.Settings),
+    data: { roles: [0], icon: 'settings' },
+  }
 ];
