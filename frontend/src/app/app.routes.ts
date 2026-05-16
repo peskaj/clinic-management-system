@@ -10,6 +10,12 @@ export const routes: Routes = [
     data: { roles: null, icon: 'dashboard' },
   },
   {
+    path: 'stats',
+    title: 'Statystyki',
+    loadComponent: () => import('./stats/stats').then(m => m.Stats),
+    data: { roles: null, icon: 'poll' },
+  },
+  {
     path: 'persons',
     title: 'Osoby',
     canMatch: [roleGuard],

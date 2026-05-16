@@ -113,5 +113,17 @@ export function personRouter(connection: DatabaseSync): Router {
         res.json(deleted);
     });
 
+    router.get('/histogram', async (req: Request, res: Response) => {
+        const data = (connection.prepare(`
+            SELECT
+                count(1) AS count,
+                strftime('%Y',birthdate)/10*10 AS decade
+                FROM persons
+                GROUP BY decade
+                ORDER BY decade
+        `)).all();
+        res.json(data);
+    });
+
     return router;
 }
