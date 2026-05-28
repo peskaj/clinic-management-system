@@ -19,7 +19,6 @@ declare global {
 }
 
 // --- Inicjalizacja sys.sqlite3 ---
-
 async function initSysDb(filename: string, adminPassword: string, userPassword: string): Promise<DatabaseSync> {
     const db = new DatabaseSync(filename);
 
@@ -32,23 +31,26 @@ async function initSysDb(filename: string, adminPassword: string, userPassword: 
 
     const count = db.prepare('SELECT COUNT(*) AS c FROM users').get() as { c: number };
     if ((count?.c ?? 0) === 0) {
-        let hash = await bcrypt.hash(adminPassword, 10);
-        db.prepare('INSERT INTO users (username, password_hash, roles) VALUES (?, ?, ?)').run(
-            'admin', hash, JSON.stringify([0])
-        );
-        console.log(`Utworzono domyślnego administratora: admin:${adminPassword} (role: [0])`);
-        hash = await bcrypt.hash(userPassword, 10);
-        db.prepare('INSERT INTO users (username, password_hash, roles) VALUES (?, ?, ?)').run(
-            'user', hash, JSON.stringify([1])
-        );
-        console.log(`Utworzono domyślnego użytkownika: user:${userPassword} (role: [1])`);
+        const insertUser = db.prepare('INSERT INTO users (username, password_hash, roles) VALUES (?, ?, ?)');
+        
+        // 0 - Admin, 1 - Lekarz, 2 - Recepcjonista
+        const adminHash = await bcrypt.hash(adminPassword, 10);
+        insertUser.run('admin', adminHash, JSON.stringify([0]));
+        console.log(`Utworzono administratora: admin:${adminPassword} (role: [0])`);
+        
+        const docHash = await bcrypt.hash(userPassword, 10);
+        insertUser.run('doctor', docHash, JSON.stringify([1]));
+        console.log(`Utworzono lekarza: doctor:${userPassword} (role: [1])`);
+
+        const recHash = await bcrypt.hash(userPassword, 10);
+        insertUser.run('reception', recHash, JSON.stringify([2]));
+        console.log(`Utworzono recepcjonistę: reception:${userPassword} (role: [2])`);
     }
 
     return db;
 }
 
 // --- Konfiguracja passport i sesji ---
-
 export async function initAuth(
     app: Application,
     config: { sysDbFilename: string; sessionSecret: string; sessionMaxAge: number; adminPassword: string; userPassword: string }
