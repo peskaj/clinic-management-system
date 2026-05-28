@@ -1,59 +1,61 @@
-import express, { Request, Response, NextFunction } from 'express';
-import morgan from 'morgan';
+// src/index.ts
+import express from 'express';
 import { DatabaseSync } from 'node:sqlite';
+import path from 'path';
 
 import { initAuth } from './auth';
-import { authRouter } from './api/auth';
-import { personRouter } from './api/person'
-import { projectRouter } from './api/project';
+import * as authApi from './api/auth'; 
+import { initPatientApi } from './api/patient';
+import { initDoctorApi } from './api/doctor';
 
 const config = {
-    port: 4000,
-    frontend: 'frontend/dist/frontend/browser',
-    api: '/api',
-    dbfilename: 'data/app.sqlite3',
-    sysDbFilename: 'data/sys.sqlite3',
-    sessionSecret: 'tajne!',
-    sessionMaxAge: 86400000,
-    adminPassword: 'Admin123',
-    userPassword: 'User123'
+    port: 3000,
+    dbFilename: './data/app.sqlite3',
+    sysDbFilename: './data/sys.sqlite3',
+    sessionSecret: 'secret',
+    sessionMaxAge: 1000 * 60 * 60 * 24 * 7, // 7 dni
+    adminPassword: 'admin',
+    userPassword: 'user'
 };
 
 const app = express();
-app.use(morgan('tiny'));
-app.use(express.static(config.frontend));
 app.use(express.json());
 
-async function main() {
-
-    // inicjalizacja mechanizmu autoryzacji
+async function startServer() {
+    // Inicjalizacja autoryzacji
     await initAuth(app, config);
-    app.use(config.api + '/auth', authRouter());
 
-    // połączenie z aplikacyjną bazą danych
-    const connection = new DatabaseSync(config.dbfilename);
-    connection.exec('PRAGMA foreign_keys = ON');
+    // Bezpieczne wpięcie API autoryzacji niezależnie od nazwy eksportu
+    if (typeof (authApi as any).initAuthApi === 'function') {
+        (authApi as any).initAuthApi(app);
+    } else if (typeof (authApi as any).init === 'function') {
+        (authApi as any).init(app);
+    } else if (typeof (authApi as any).default === 'function') {
+        (authApi as any).default(app);
+    }
 
-    app.use(config.api + '/person', personRouter(connection));
-    app.use(config.api + '/project', projectRouter(connection));
+    // Inicjalizacja API biznesowego dla Przychodni
+    const db = new DatabaseSync(config.dbFilename);
+    initPatientApi(app, db);
+    initDoctorApi(app, db);
 
-    // nieobsłużone endpointy
-    app.use(config.api, (_req: Request, res: Response, _next: NextFunction) => {
-        res.status(404).json({ error: 'endpoint not handled' });
+    // Obsługa błędów API
+    app.use('/api', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+        res.status(err.status || 500).json({
+            error: err.message || 'Wewnętrzny błąd serwera'
+        });
     });
 
-    // obsługa błędów w Express - musi być ostatnim handlerem
-    app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-        res.status(400).json({ error: err.message });
+    // Serwowanie statycznych plików Angulara
+    app.use(express.static(path.join(__dirname, '../frontend/dist/frontend/browser')));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, '../frontend/dist/frontend/browser/index.html'));
     });
 
-    // rozpoczynamy nasłuchiwanie
+    // Start serwera
     app.listen(config.port, () => {
-        console.log(`Serwer wystartował na porcie ${config.port}`);
+        console.log(`Server listening on port ${config.port}`);
     });
 }
 
-main().catch(err => {
-    console.error(`Błąd uruchomienia serwera [${err.code}]: ${err.message}`);
-    process.exit(1);
-});
+startServer().catch(console.error);
