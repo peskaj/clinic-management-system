@@ -9,7 +9,7 @@
     </mat-toolbar>
     <mat-nav-list>
       @for (item of navItems(); track item.path) {
-        <a mat-list-item [routerLink]="'/' + item.path">
+        <a mat-list-item [routerLink]="'/' + item.path" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item.path === ''}">
           <mat-icon matListItemIcon>{{ item.data?.['icon'] }}</mat-icon>
           <span matListItemTitle>{{ item.title }}</span>
         </a>

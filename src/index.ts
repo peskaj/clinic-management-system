@@ -26,13 +26,7 @@ async function startServer() {
     await initAuth(app, config);
 
     // Bezpieczne wpięcie API autoryzacji niezależnie od nazwy eksportu
-    if (typeof (authApi as any).initAuthApi === 'function') {
-        (authApi as any).initAuthApi(app);
-    } else if (typeof (authApi as any).init === 'function') {
-        (authApi as any).init(app);
-    } else if (typeof (authApi as any).default === 'function') {
-        (authApi as any).default(app);
-    }
+    app.use('/api/auth', authApi.authRouter());
 
     // Inicjalizacja API biznesowego dla Przychodni
     const db = new DatabaseSync(config.dbFilename);
