@@ -8,7 +8,7 @@ export interface Visit {
     doctorId: number;
     visitDate: string;
     room: string;
-    // Te pola przyjdą z backendu dzięki naszemu SQL JOIN!
+    status: string; // Nowe pole
     patientFirstname?: string;
     patientLastname?: string;
     doctorFirstname?: string;
@@ -35,6 +35,11 @@ export class VisitService {
 
     addVisit(visit: VisitCreate): Observable<{ id: number }> {
         return this.http.post<{ id: number }>(this.apiUrl, visit);
+    }
+
+    // Nowa metoda do zmiany statusu
+    updateStatus(id: number, status: string): Observable<{ message: string }> {
+        return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/status`, { status });
     }
 
     deleteVisit(id: number): Observable<{ message: string }> {

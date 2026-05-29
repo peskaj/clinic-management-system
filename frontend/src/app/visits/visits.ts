@@ -21,8 +21,8 @@ export class Visits implements OnInit {
     private fb = inject(FormBuilder);
     
     dataSource = new MatTableDataSource<Visit>([]);
-    // Dodaliśmy kolumnę 'actions' na przycisk usuwania
-    displayedColumns: string[] = ['id', 'patient', 'doctor', 'visitDate', 'room', 'actions'];
+    // Dodano kolumnę 'status'
+    displayedColumns: string[] = ['id', 'patient', 'doctor', 'visitDate', 'room', 'status', 'actions'];
 
     patients: Patient[] = [];
     doctors: Doctor[] = [];
@@ -46,7 +46,6 @@ export class Visits implements OnInit {
         });
     }
 
-    // Pobieramy dane do list rozwijanych (Selectów)
     loadDictionaries() {
         this.patientService.getPatients().subscribe(data => this.patients = data);
         this.doctorService.getDoctors().subscribe(data => this.doctors = data);
@@ -62,6 +61,14 @@ export class Visits implements OnInit {
                 error: (err) => console.error('Błąd rejestracji wizyty:', err)
             });
         }
+    }
+
+    // Nowa funkcja obsługująca rozwijaną listę statusów
+    changeStatus(id: number, newStatus: string) {
+        this.visitService.updateStatus(id, newStatus).subscribe({
+            next: () => this.loadVisits(),
+            error: (err) => console.error('Błąd zmiany statusu:', err)
+        });
     }
 
     deleteVisit(id: number) {
