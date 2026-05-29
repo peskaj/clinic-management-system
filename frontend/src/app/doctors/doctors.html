@@ -2,20 +2,19 @@
     <h2>Personel Medyczny</h2>
     
     <form [formGroup]="doctorForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
-        
         <mat-form-field appearance="outline">
             <mat-label>Imię</mat-label>
-            <input matInput formControlName="firstname" placeholder="Np. Anna">
+            <input matInput formControlName="firstname">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
             <mat-label>Nazwisko</mat-label>
-            <input matInput formControlName="lastname" placeholder="Np. Nowak">
+            <input matInput formControlName="lastname">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
             <mat-label>Specjalizacja</mat-label>
-            <input matInput formControlName="specialization" placeholder="Np. Kardiolog">
+            <input matInput formControlName="specialization">
         </mat-form-field>
 
         <button mat-flat-button color="primary" type="submit" [disabled]="doctorForm.invalid" style="height: 56px; margin-bottom: 22px;">
@@ -24,28 +23,76 @@
         </button>
     </form>
 
-    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width: 100%;">
-        <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef> ID </th>
-            <td mat-cell *matCellDef="let element"> {{element.id}} </td>
-        </ng-container>
+    <div class="table-container mat-elevation-z8" style="width: 100%;">
+        <table mat-table [dataSource]="dataSource" style="width: 100%;">
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="firstname">
-            <th mat-header-cell *matHeaderCellDef> Imię </th>
-            <td mat-cell *matCellDef="let element"> {{element.firstname}} </td>
-        </ng-container>
+            <ng-container matColumnDef="firstname">
+                <th mat-header-cell *matHeaderCellDef> Imię </th>
+                <td mat-cell *matCellDef="let element"> {{element.firstname}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="lastname">
-            <th mat-header-cell *matHeaderCellDef> Nazwisko </th>
-            <td mat-cell *matCellDef="let element"> {{element.lastname}} </td>
-        </ng-container>
+            <ng-container matColumnDef="lastname">
+                <th mat-header-cell *matHeaderCellDef> Nazwisko </th>
+                <td mat-cell *matCellDef="let element"> {{element.lastname}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="specialization">
-            <th mat-header-cell *matHeaderCellDef> Specjalizacja </th>
-            <td mat-cell *matCellDef="let element"> {{element.specialization}} </td>
-        </ng-container>
+            <ng-container matColumnDef="specialization">
+                <th mat-header-cell *matHeaderCellDef> Specjalizacja </th>
+                <td mat-cell *matCellDef="let element"> {{element.specialization}} </td>
+            </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef style="width: 120px; text-align: center;"> Akcje </th>
+                <td mat-cell *matCellDef="let element" style="text-align: center;">
+                    <button mat-icon-button color="primary" (click)="showCalendar(element)" title="Pokaż grafik wizyt">
+                        <mat-icon>calendar_month</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteDoctor(element.id)" title="Usuń lekarza">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </div>
+
+    @if (selectedDoctor) {
+        <div class="calendar-section mat-elevation-z8" style="padding: 20px; margin-top: 30px; background: white; border-radius: 8px;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <h3>Grafik wizyt: {{ selectedDoctor.firstname }} {{ selectedDoctor.lastname }}</h3>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button mat-stroked-button mwlCalendarPreviousView [view]="view" [(viewDate)]="viewDate">
+                        &lt; Poprzedni
+                    </button>
+                    <button mat-flat-button color="primary" mwlCalendarToday [(viewDate)]="viewDate">
+                        Dzisiaj
+                    </button>
+                    <button mat-stroked-button mwlCalendarNextView [view]="view" [(viewDate)]="viewDate">
+                        Następny &gt;
+                    </button>
+                </div>
+
+                <div>
+                    <button mat-stroked-button (click)="view = CalendarView.Month" [color]="view === CalendarView.Month ? 'primary' : ''">Miesiąc</button>
+                    <button mat-stroked-button (click)="view = CalendarView.Week" [color]="view === CalendarView.Week ? 'primary' : ''" style="margin: 0 10px;">Tydzień</button>
+                    <button mat-stroked-button (click)="view = CalendarView.Day" [color]="view === CalendarView.Day ? 'primary' : ''">Dzień</button>
+                </div>
+            </div>
+
+            <div [ngSwitch]="view">
+                <mwl-calendar-month-view *ngSwitchCase="CalendarView.Month" [viewDate]="viewDate" [events]="events" [refresh]="refresh"></mwl-calendar-month-view>
+                <mwl-calendar-week-view *ngSwitchCase="CalendarView.Week" [viewDate]="viewDate" [events]="events" [refresh]="refresh" [dayStartHour]="8" [dayEndHour]="20"></mwl-calendar-week-view>
+                <mwl-calendar-day-view *ngSwitchCase="CalendarView.Day" [viewDate]="viewDate" [events]="events" [refresh]="refresh" [dayStartHour]="8" [dayEndHour]="20"></mwl-calendar-day-view>
+            </div>
+            
+        </div>
+    }
 </div>

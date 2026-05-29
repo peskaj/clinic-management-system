@@ -1,12 +1,12 @@
 <div class="visits-container" style="padding: 20px;">
     <h2>Rejestracja Wizyt</h2>
-    
+
     <form [formGroup]="visitForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
-        
+
         <mat-form-field appearance="outline">
             <mat-label>Pacjent</mat-label>
             <mat-select formControlName="patientId">
-                @for (patient of patients; track patient.id) {
+                @for (patient of patients; track $index) {
                     <mat-option [value]="patient.id">
                         {{ patient.firstname }} {{ patient.lastname }} (PESEL: {{ patient.pesel }})
                     </mat-option>
@@ -17,7 +17,7 @@
         <mat-form-field appearance="outline">
             <mat-label>Lekarz</mat-label>
             <mat-select formControlName="doctorId">
-                @for (doctor of doctors; track doctor.id) {
+                @for (doctor of doctors; track $index) {
                     <mat-option [value]="doctor.id">
                         {{ doctor.firstname }} {{ doctor.lastname }} ({{ doctor.specialization }})
                     </mat-option>
@@ -41,53 +41,56 @@
         </button>
     </form>
 
-    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width: 100%;">
-        <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef> ID </th>
-            <td mat-cell *matCellDef="let element"> {{element.id}} </td>
-        </ng-container>
+    <div class="table-container mat-elevation-z8" style="width: 100%;">
+        <table mat-table [dataSource]="dataSource" style="width: 100%;">
+            
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="patient">
-            <th mat-header-cell *matHeaderCellDef> Pacjent </th>
-            <td mat-cell *matCellDef="let element"> {{element.patientFirstname}} {{element.patientLastname}} </td>
-        </ng-container>
+            <ng-container matColumnDef="patient">
+                <th mat-header-cell *matHeaderCellDef> Pacjent </th>
+                <td mat-cell *matCellDef="let element"> {{element.patientFirstname}} {{element.patientLastname}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="doctor">
-            <th mat-header-cell *matHeaderCellDef> Lekarz </th>
-            <td mat-cell *matCellDef="let element"> {{element.doctorFirstname}} {{element.doctorLastname}} </td>
-        </ng-container>
+            <ng-container matColumnDef="doctor">
+                <th mat-header-cell *matHeaderCellDef> Lekarz </th>
+                <td mat-cell *matCellDef="let element"> {{element.doctorFirstname}} {{element.doctorLastname}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="visitDate">
-            <th mat-header-cell *matHeaderCellDef> Data i czas </th>
-            <td mat-cell *matCellDef="let element"> {{element.visitDate | date:'dd.MM.yyyy, HH:mm'}} </td>
-        </ng-container>
+            <ng-container matColumnDef="visitDate">
+                <th mat-header-cell *matHeaderCellDef> Data i czas </th>
+                <td mat-cell *matCellDef="let element"> {{element.visitDate | date:'dd.MM.yyyy, HH:mm'}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="room">
-            <th mat-header-cell *matHeaderCellDef> Gabinet </th>
-            <td mat-cell *matCellDef="let element"> {{element.room}} </td>
-        </ng-container>
+            <ng-container matColumnDef="room">
+                <th mat-header-cell *matHeaderCellDef> Gabinet </th>
+                <td mat-cell *matCellDef="let element"> {{element.room}} </td>
+            </ng-container>
 
-        <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef> Status </th>
-            <td mat-cell *matCellDef="let element">
-                <mat-select [value]="element.status || 'zaplanowana'" (selectionChange)="changeStatus(element.id, $event.value)">
-                    <mat-option value="zaplanowana">Zaplanowana</mat-option>
-                    <mat-option value="odbyta">Odbyta</mat-option>
-                    <mat-option value="anulowana">Anulowana</mat-option>
-                </mat-select>
-            </td>
-        </ng-container>
+            <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef> Status </th>
+                <td mat-cell *matCellDef="let element">
+                    <mat-select [value]="element.status || 'zaplanowana'" (selectionChange)="changeStatus(element.id, $event.value)">
+                        <mat-option value="zaplanowana">Zaplanowana</mat-option>
+                        <mat-option value="odbyta">Odbyta</mat-option>
+                        <mat-option value="anulowana">Anulowana</mat-option>
+                    </mat-select>
+                </td>
+            </ng-container>
 
-        <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef> Akcje </th>
-            <td mat-cell *matCellDef="let element">
-                <button mat-icon-button color="warn" (click)="deleteVisit(element.id)" type="button">
-                    <mat-icon>delete</mat-icon>
-                </button>
-            </td>
-        </ng-container>
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef style="text-align: center;"> Akcje </th>
+                <td mat-cell *matCellDef="let element" style="text-align: center;">
+                    <button mat-icon-button color="warn" (click)="deleteVisit(element.id)" type="button">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </td>
+            </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </div>
 </div>

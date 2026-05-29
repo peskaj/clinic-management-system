@@ -17,3 +17,11 @@
 .snackbar-error .mat-mdc-snack-bar-action {
   color: #fff !important;
 }
+
+/* Odblokowanie przewijania strony po rozwinięciu dużych komponentów */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow-y: auto !important; /* Wymuszenie pionowego scrolla */
+    overflow-x: hidden; /* Ukrycie ewentualnego poziomego paska błędu */
+}

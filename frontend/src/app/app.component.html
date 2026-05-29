@@ -1,0 +1,26 @@
+<mat-toolbar color="primary" class="mat-elevation-z6" style="margin-bottom: 30px; display: flex; justify-content: space-between;">
+    
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <mat-icon style="transform: scale(1.2);">local_hospital</mat-icon>
+        <span style="font-weight: 500; font-size: 1.2rem; letter-spacing: 1px;">Klinika Medyczna</span>
+    </div>
+    
+    <div style="display: flex; gap: 5px;">
+        <button mat-button routerLink="/patients" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: false}">
+            <mat-icon>people</mat-icon> Pacjenci
+        </button>
+        
+        <button mat-button routerLink="/doctors" routerLinkActive="active-link">
+            <mat-icon>medical_services</mat-icon> Lekarze
+        </button>
+        
+        <button mat-button routerLink="/visits" routerLinkActive="active-link">
+            <mat-icon>event_available</mat-icon> Wizyty
+        </button>
+    </div>
+
+</mat-toolbar>
+
+<div class="main-container" style="padding: 0 20px; max-width: 1400px; margin: 0 auto;">
+    <router-outlet></router-outlet>
+</div>

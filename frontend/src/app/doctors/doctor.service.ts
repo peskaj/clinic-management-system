@@ -23,4 +23,7 @@ export class DoctorService {
     addDoctor(doctor: Omit<Doctor, 'id'>): Observable<Doctor> {
         return this.http.post<Doctor>(this.apiUrl, doctor);
     }
+    deleteDoctor(id: number): Observable<{ message: string }> {
+        return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+    }
 }

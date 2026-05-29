@@ -26,18 +26,54 @@ export function initVisitApi(app: Application, db: DatabaseSync) {
     const accessRoles = [0, 2];
 
     // Pobieranie wizyt (Harmonogram - posortowane chronologicznie)
+
     app.get('/api/visits', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
+            try {
+                const visits = db.prepare(`
+                    SELECT v.id, v.visitDate, v.room, v.status, 
+                        p.firstname AS patientFirstname, p.lastname AS patientLastname,
+                        d.firstname AS doctorFirstname, d.lastname AS doctorLastname
+                    FROM visits v
+                    JOIN patients p ON v.patientId = p.id
+                    JOIN doctors d ON v.doctorId = d.id
+                    ORDER BY v.visitDate DESC
+                `).all();
+                res.json(visits);
+            } catch (err) {
+                next(err);
+            }
+    });
+
+    // NOWE 1: Pobieranie historii wizyt konkretnego pacjenta (do raportu PDF)
+    app.get('/api/visits/patient/:id', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
         try {
+            const patientId = Number(req.params.id);
             const visits = db.prepare(`
-                SELECT 
-                    v.id, v.visitDate, v.room, v.status,
-                    v.patientId, p.firstname AS patientFirstname, p.lastname AS patientLastname,
-                    v.doctorId, d.firstname AS doctorFirstname, d.lastname AS doctorLastname
+                SELECT v.id, v.visitDate, v.room, v.status, 
+                       d.firstname AS doctorFirstname, d.lastname AS doctorLastname, d.specialization
+                FROM visits v
+                JOIN doctors d ON v.doctorId = d.id
+                WHERE v.patientId = ?
+                ORDER BY v.visitDate DESC
+            `).all(patientId);
+            res.json(visits);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    // NOWE 2: Pobieranie harmonogramu konkretnego lekarza (do graficznego kalendarza)
+    app.get('/api/visits/doctor/:id', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const doctorId = Number(req.params.id);
+            const visits = db.prepare(`
+                SELECT v.id, v.visitDate, v.room, v.status, 
+                       p.firstname AS patientFirstname, p.lastname AS patientLastname
                 FROM visits v
                 JOIN patients p ON v.patientId = p.id
-                JOIN doctors d ON v.doctorId = d.id
+                WHERE v.doctorId = ?
                 ORDER BY v.visitDate ASC
-            `).all();
+            `).all(doctorId);
             res.json(visits);
         } catch (err) {
             next(err);

@@ -1,0 +1,12 @@
+.doctors-container {
+    /* Odejmujemy wysokość górnego paska (ok. 80-100px), żeby kontener idealnie wpasował się w ekran */
+    max-height: calc(100vh - 100px); 
+    overflow-y: auto; 
+    padding-bottom: 100px !important; /* Solidny bufor na samym dole, żeby kalendarz nie przylegał do krawędzi */
+    box-sizing: border-box; 
+}
+
+/* Upewniamy się, że sam kalendarz nie wyłazi poza ramy */
+.calendar-section {
+    margin-bottom: 40px;
+}

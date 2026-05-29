@@ -45,4 +45,13 @@ export class VisitService {
     deleteVisit(id: number): Observable<{ message: string }> {
         return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
     }
+    // Pobieranie historii konkretnego pacjenta (do PDF)
+    getPatientVisits(patientId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/patient/${patientId}`);
+    }
+
+    // Pobieranie harmonogramu konkretnego lekarza (do Kalendarza)
+    getDoctorVisits(doctorId: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.apiUrl}/doctor/${doctorId}`);
+    }
 }

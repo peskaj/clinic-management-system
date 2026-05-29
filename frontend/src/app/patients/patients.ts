@@ -6,22 +6,26 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 
+import { jsPDF } from 'jspdf'; 
+// 1. FIX: Importujemy autoTable jako "efekt uboczny", co omija błędy z brakiem typów
+import 'jspdf-autotable'; 
+import { VisitService } from '../visits/visit.service';
+
 @Component({
     selector: 'app-patients',
     standalone: true,
-    // Dodano MatPaginatorModule do importów
     imports: [CommonModule, MaterialModule, ReactiveFormsModule, MatPaginatorModule],
     templateUrl: './patients.html',
     styleUrls: ['./patients.css']
 })
 export class Patients implements OnInit, AfterViewInit {
     private patientService = inject(PatientService);
+    private visitService = inject(VisitService);
     private fb = inject(FormBuilder);
     
     dataSource = new MatTableDataSource<Patient>([]);
-    displayedColumns: string[] = ['id', 'firstname', 'lastname', 'pesel', 'phone'];
+    displayedColumns: string[] = ['id', 'firstname', 'lastname', 'pesel', 'phone', 'actions'];
 
-    // Łapiemy paginator z pliku HTML
     @ViewChild('paginator') paginator!: MatPaginator;
 
     patientForm = this.fb.group({
@@ -35,7 +39,6 @@ export class Patients implements OnInit, AfterViewInit {
         this.loadPatients();
     }
 
-    // Spinamy paginator ze źródłem danych od razu po załadowaniu widoku
     ngAfterViewInit() {
         this.dataSource.paginator = this.paginator;
     }
@@ -44,7 +47,6 @@ export class Patients implements OnInit, AfterViewInit {
         this.patientService.getPatients().subscribe({
             next: (data) => {
                 this.dataSource.data = data;
-                // Agresywne zespawanie paginatora po przyjściu danych z serwera!
                 if (this.paginator) {
                     this.dataSource.paginator = this.paginator;
                 }
@@ -55,7 +57,16 @@ export class Patients implements OnInit, AfterViewInit {
 
     onSubmit() {
         if (this.patientForm.valid) {
-            this.patientService.addPatient(this.patientForm.value as Omit<Patient, 'id'>).subscribe({
+            // 2. FIX: Wymuszamy typowanie string, żeby TypeScript nie panikował, że pole może być 'null'
+            const formVal = this.patientForm.value;
+            const newPatient = {
+                firstname: formVal.firstname as string,
+                lastname: formVal.lastname as string,
+                pesel: formVal.pesel as string,
+                phone: formVal.phone as string
+            };
+
+            this.patientService.addPatient(newPatient).subscribe({
                 next: () => {
                     this.loadPatients();
                     this.patientForm.reset();
@@ -65,35 +76,40 @@ export class Patients implements OnInit, AfterViewInit {
         }
     }
 
-    onFileSelected(event: any) {
-        const file: File = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const content = e.target?.result as string;
-                    let parsedData: any[] = [];
+    // 3. FIX: Precyzyjne rzutowanie typu (Event -> HTMLInputElement), co ucisza błędy "target"
+    onFileSelected(event: Event) {
+        const input = event.target as HTMLInputElement;
+        
+        // Zabezpieczenie przed anulowaniem wyboru pliku
+        if (!input.files || input.files.length === 0) return;
 
-                    if (file.name.toLowerCase().endsWith('.csv')) {
-                        parsedData = this.parseCSV(content);
-                    } else {
-                        parsedData = JSON.parse(content);
-                    }
-                    
-                    this.patientService.importPatients(parsedData).subscribe({
-                        next: (res) => {
-                            alert(`Pomyślnie zaimportowano ${res.importedCount} pacjentów!`);
-                            this.loadPatients();
-                        },
-                        error: (err) => console.error('Błąd importu na serwerze:', err)
-                    });
-                } catch (error) {
-                    alert('Błąd odczytu pliku! Upewnij się, że to poprawny format JSON lub CSV.');
+        const file: File = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const content = e.target?.result as string;
+                let parsedData: any[] = [];
+
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    parsedData = this.parseCSV(content);
+                } else {
+                    parsedData = JSON.parse(content);
                 }
-            };
-            reader.readAsText(file);
-        }
-        event.target.value = '';
+                
+                this.patientService.importPatients(parsedData).subscribe({
+                    next: (res) => {
+                        alert(`Pomyślnie zaimportowano ${res.importedCount} pacjentów!`);
+                        this.loadPatients();
+                    },
+                    error: (err) => console.error('Błąd importu na serwerze:', err)
+                });
+            } catch (error) {
+                alert('Błąd odczytu pliku! Upewnij się, że to poprawny format JSON lub CSV.');
+            }
+        };
+        reader.readAsText(file);
+        
+        input.value = ''; // Reset inputa
     }
 
     private parseCSV(text: string): any[] {
@@ -115,4 +131,43 @@ export class Patients implements OnInit, AfterViewInit {
         }
         return data;
     }
+
+    generatePdf(patient: Patient) {
+        this.visitService.getPatientVisits(patient.id).subscribe({
+            next: (visits) => {
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.text(`Historia medyczna: ${patient.firstname} ${patient.lastname}`, 14, 20);
+                
+                doc.setFontSize(12);
+                doc.text(`PESEL: ${patient.pesel} | Telefon: ${patient.phone}`, 14, 30);
+                
+                if (visits.length === 0) {
+                    doc.text('Brak zarejestrowanych wizyt dla tego pacjenta w systemie.', 14, 45);
+                } else {
+                    const tableData = visits.map((v: any, index: number) => [
+                        index + 1,
+                        (v.visitDate || '').replace('T', ' '), 
+                        `${v.doctorFirstname} ${v.doctorLastname} \n(${v.specialization || 'Brak'})`,
+                        v.room,
+                        (v.status ? v.status.toUpperCase() : 'ZAPLANOWANA') 
+                    ]);
+
+                    // Zastosowanie (doc as any) wymusza wykonanie wtyczki omijając całkowicie inspekcję typów
+                    (doc as any).autoTable({
+                        startY: 40,
+                        head: [['L.p.', 'Data i czas', 'Lekarz', 'Gabinet', 'Status']],
+                        body: tableData,
+                        theme: 'grid',
+                        styles: { fontSize: 10 },
+                        headStyles: { fillColor: [63, 81, 181] } 
+                    });
+                }
+                
+                doc.save(`Historia_Pacjenta_${patient.pesel}.pdf`);
+            },
+            error: (err) => console.error('Błąd pobierania historii wizyt do PDF:', err)
+        });
+    }   
 }

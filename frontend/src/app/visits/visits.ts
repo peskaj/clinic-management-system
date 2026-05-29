@@ -19,9 +19,10 @@ export class Visits implements OnInit {
     private patientService = inject(PatientService);
     private doctorService = inject(DoctorService);
     private fb = inject(FormBuilder);
-    
+
     dataSource = new MatTableDataSource<Visit>([]);
-    // Dodano kolumnę 'status'
+    
+    // Żelazna lista kolumn (musi idealnie pasować do HTML)
     displayedColumns: string[] = ['id', 'patient', 'doctor', 'visitDate', 'room', 'status', 'actions'];
 
     patients: Patient[] = [];
@@ -40,9 +41,13 @@ export class Visits implements OnInit {
     }
 
     loadVisits() {
+        console.log('RADAR: Odpalam funkcję pobierania...'); // <--- DODAJ TO
         this.visitService.getVisits().subscribe({
-            next: (data) => this.dataSource.data = data,
-            error: (err) => console.error('Błąd pobierania wizyt:', err)
+            next: (data) => {
+                this.dataSource.data = data;
+                console.log('RADAR: Przyszły dane z backendu!', data); // <--- DODAJ TO
+            },
+            error: (err: any) => console.error('Błąd pobierania wizyt:', err)
         });
     }
 
@@ -53,28 +58,39 @@ export class Visits implements OnInit {
 
     onSubmit() {
         if (this.visitForm.valid) {
-            this.visitService.addVisit(this.visitForm.value as any).subscribe({
+            const formVal = this.visitForm.value;
+            const newVisit = {
+                patientId: formVal.patientId as number,
+                doctorId: formVal.doctorId as number,
+                visitDate: formVal.visitDate as string,
+                room: formVal.room as string
+            };
+
+            this.visitService.addVisit(newVisit).subscribe({
                 next: () => {
                     this.loadVisits();
                     this.visitForm.reset();
+                    // Resetowanie wizualnych błędów po dodaniu
+                    Object.keys(this.visitForm.controls).forEach(key => {
+                        this.visitForm.get(key)?.setErrors(null);
+                    });
                 },
-                error: (err) => console.error('Błąd rejestracji wizyty:', err)
+                error: (err: any) => console.error('Błąd rejestracji wizyty:', err)
             });
         }
     }
 
-    // Nowa funkcja obsługująca rozwijaną listę statusów
     changeStatus(id: number, newStatus: string) {
         this.visitService.updateStatus(id, newStatus).subscribe({
             next: () => this.loadVisits(),
-            error: (err) => console.error('Błąd zmiany statusu:', err)
+            error: (err: any) => console.error('Błąd zmiany statusu:', err)
         });
     }
 
     deleteVisit(id: number) {
         this.visitService.deleteVisit(id).subscribe({
             next: () => this.loadVisits(),
-            error: (err) => console.error('Błąd odwoływania wizyty:', err)
+            error: (err: any) => console.error('Błąd odwoływania wizyty:', err)
         });
     }
 }
