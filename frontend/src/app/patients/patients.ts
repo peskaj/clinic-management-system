@@ -22,7 +22,7 @@ export class Patients implements OnInit, AfterViewInit {
     displayedColumns: string[] = ['id', 'firstname', 'lastname', 'pesel', 'phone'];
 
     // Łapiemy paginator z pliku HTML
-    @ViewChild(MatPaginator) paginator!: MatPaginator;
+    @ViewChild('paginator') paginator!: MatPaginator;
 
     patientForm = this.fb.group({
         firstname: ['', Validators.required],
@@ -42,7 +42,13 @@ export class Patients implements OnInit, AfterViewInit {
 
     loadPatients() {
         this.patientService.getPatients().subscribe({
-            next: (data) => this.dataSource.data = data,
+            next: (data) => {
+                this.dataSource.data = data;
+                // Agresywne zespawanie paginatora po przyjściu danych z serwera!
+                if (this.paginator) {
+                    this.dataSource.paginator = this.paginator;
+                }
+            },
             error: (err) => console.error('Błąd podczas pobierania pacjentów:', err)
         });
     }
