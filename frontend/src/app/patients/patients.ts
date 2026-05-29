@@ -52,4 +52,57 @@ export class Patients implements OnInit {
             });
         }
     }
+    onFileSelected(event: any) {
+        const file: File = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const content = e.target?.result as string;
+                    let parsedData: any[] = [];
+
+                    // Rozpoznajemy format po rozszerzeniu pliku
+                    if (file.name.toLowerCase().endsWith('.csv')) {
+                        parsedData = this.parseCSV(content);
+                    } else {
+                        parsedData = JSON.parse(content);
+                    }
+                    
+                    this.patientService.importPatients(parsedData).subscribe({
+                        next: (res) => {
+                            alert(`Pomyślnie zaimportowano ${res.importedCount} pacjentów!`);
+                            this.loadPatients();
+                        },
+                        error: (err) => console.error('Błąd importu na serwerze:', err)
+                    });
+                } catch (error) {
+                    alert('Błąd odczytu pliku! Upewnij się, że to poprawny format JSON lub CSV.');
+                }
+            };
+            reader.readAsText(file);
+        }
+        event.target.value = '';
+    }
+
+    // Nowa funkcja tłumacząca CSV na tablicę obiektów
+    private parseCSV(text: string): any[] {
+        const lines = text.split('\n').filter(line => line.trim().length > 0);
+        if (lines.length < 2) return []; // Potrzebujemy nagłówka i chociaż jednego wiersza
+
+        // Pobieramy nagłówki i usuwamy białe znaki
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const data = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim());
+            const obj: any = {};
+            headers.forEach((header, index) => {
+                if (values[index]) {
+                    obj[header] = values[index];
+                }
+            });
+            data.push(obj);
+        }
+        return data;
+    }
 }

@@ -27,6 +27,12 @@
             <mat-icon>person_add</mat-icon>
             Dodaj Pacjenta
         </button>
+
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,.csv" style="display: none;">
+        <button mat-stroked-button type="button" (click)="fileInput.click()" style="height: 56px; margin-bottom: 22px;">
+            <mat-icon>upload_file</mat-icon>
+            Importuj z pliku (JSON/CSV)
+        </button>
     </form>
 
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width: 100%;">

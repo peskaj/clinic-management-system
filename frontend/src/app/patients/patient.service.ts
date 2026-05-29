@@ -25,4 +25,8 @@ export class PatientService {
     addPatient(patient: Omit<Patient, 'id'>): Observable<Patient> {
         return this.http.post<Patient>(this.apiUrl, patient);
     }
+    
+    importPatients(patients: Omit<Patient, 'id'>[]): Observable<{ importedCount: number }> {
+        return this.http.post<{ importedCount: number }>(`${this.apiUrl}/bulk`, patients);
+    }
 }

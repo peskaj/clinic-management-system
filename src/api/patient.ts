@@ -40,16 +40,36 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
     });
 
     // 4. Dodawanie nowego pacjenta
-    app.post('/api/patients', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
+    // NOWE: Masowy import pacjentów z pliku
+    app.post('/api/patients/bulk', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { firstname, lastname, pesel, phone } = req.body;
-            if (!firstname || !lastname) return next(createError(400, 'Imię i nazwisko są wymagane'));
+            const patients = req.body;
+            if (!Array.isArray(patients)) return next(createError(400, 'Oczekiwano tablicy pacjentów'));
 
+            let importedCount = 0;
             const stmt = db.prepare('INSERT INTO patients (firstname, lastname, pesel, phone) VALUES (?, ?, ?, ?)');
-            const info = stmt.run(firstname, lastname, pesel || null, phone || null);
-            res.status(201).json({ id: info.lastInsertRowid });
-        } catch (err: any) {
-            if (err.message.includes('UNIQUE')) return next(createError(409, 'Pacjent z takim numerem PESEL już istnieje'));
+
+            // Używamy transakcji dla maksymalnej wydajności i bezpieczeństwa
+            db.exec('BEGIN TRANSACTION');
+            try {
+                for (const p of patients) {
+                    if (!p.firstname || !p.lastname) continue; // Pomijamy uszkodzone rekordy
+                    try {
+                        stmt.run(p.firstname, p.lastname, p.pesel || null, p.phone || null);
+                        importedCount++;
+                    } catch (e: any) {
+                        // Jeśli PESEL już istnieje, po prostu go ignorujemy i lecimy dalej
+                        if (!e.message.includes('UNIQUE')) throw e; 
+                    }
+                }
+                db.exec('COMMIT');
+            } catch (err) {
+                db.exec('ROLLBACK');
+                throw err;
+            }
+
+            res.status(201).json({ importedCount });
+        } catch (err) {
             next(err);
         }
     });
