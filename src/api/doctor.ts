@@ -4,7 +4,17 @@ import { requireAuth } from '../auth';
 import createError from 'http-errors';
 
 export function initDoctorApi(app: Application, db: DatabaseSync) {
-    
+    // 1. Gwarancja istnienia tabeli lekarzy
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS doctors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            firstname TEXT NOT NULL,
+            lastname TEXT NOT NULL,
+            specialization TEXT
+        )
+    `);
+
+    // 2. Pobieranie wszystkich lekarzy
     app.get('/api/doctors', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
         try {
             const doctors = db.prepare('SELECT * FROM doctors').all();
@@ -14,6 +24,7 @@ export function initDoctorApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 3. Dodawanie nowego lekarza
     app.post('/api/doctors', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
         try {
             const { firstname, lastname, specialization } = req.body;
@@ -27,6 +38,7 @@ export function initDoctorApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 4. Aktualizacja lekarza
     app.put('/api/doctors/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
         try {
             const doctorId = Number(req.params.id);
@@ -41,6 +53,7 @@ export function initDoctorApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 5. Usuwanie lekarza
     app.delete('/api/doctors/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
         try {
             const doctorId = Number(req.params.id);
