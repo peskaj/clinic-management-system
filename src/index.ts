@@ -7,6 +7,7 @@ import { initAuth } from './auth';
 import * as authApi from './api/auth'; 
 import { initPatientApi } from './api/patient';
 import { initDoctorApi } from './api/doctor';
+import { initVisitApi } from './api/visit';
 
 const config = {
     port: 3000,
@@ -32,6 +33,7 @@ async function startServer() {
     const db = new DatabaseSync(config.dbFilename);
     initPatientApi(app, db);
     initDoctorApi(app, db);
+    initVisitApi(app, db);
 
     // Obsługa błędów API
     app.use('/api', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
