@@ -2,6 +2,7 @@ import { Application, Request, Response, NextFunction } from 'express';
 import { DatabaseSync } from 'node:sqlite';
 import { requireAuth } from '../auth';
 import createError from 'http-errors';
+import { AuditService } from '../services/audit.service';
 
 export function initDoctorApi(app: Application, db: DatabaseSync) {
     // 1. Gwarancja istnienia tabeli lekarzy
@@ -55,14 +56,30 @@ export function initDoctorApi(app: Application, db: DatabaseSync) {
 
     // 5. Usuwanie lekarza
     app.delete('/api/doctors/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const doctorId = Number(req.params.id);
-            const stmt = db.prepare('DELETE FROM doctors WHERE id = ?');
-            const info = stmt.run(doctorId);
-            if (info.changes === 0) return next(createError(404, 'Nie znaleziono lekarza do usunięcia'));
-            res.json({ message: 'Usunięto pomyślnie' });
-        } catch (err) {
-            next(err);
+    try {
+        const doctorId = Number(req.params.id);
+
+        // 1. Pobieramy dane lekarza do audytu zanim zniknie
+        const oldDoctor = db.prepare('SELECT * FROM doctors WHERE id = ?').get(doctorId);
+        if (!oldDoctor) {
+             return res.status(404).json({ message: 'Nie znaleziono lekarza' });
         }
-    });
+
+        // 2. KLUCZOWY KROK: Najpierw usuwamy wszystkie wizyty powiązane z tym lekarzem.
+        // To zwalnia blokadę klucza obcego (Foreign Key) w bazie danych!
+        db.prepare('DELETE FROM visits WHERE doctorId = ?').run(doctorId);
+
+        // 3. Teraz bezpiecznie usuwamy samego lekarza
+        const stmt = db.prepare('DELETE FROM doctors WHERE id = ?');
+        stmt.run(doctorId);
+
+        // 4. Rejestrujemy akcję w naszym nowym, pancernym audycie
+        AuditService.log(db, (req as any).user, 'DELETE', 'DOCTOR', doctorId, oldDoctor, null, 'Usunięto lekarza oraz wszystkie jego zaplanowane wizyty');
+
+        res.json({ message: 'Lekarz i jego wizyty zostali trwale usunięci z systemu.' });
+
+    } catch (err) {
+        next(err);
+    }
+});
 }

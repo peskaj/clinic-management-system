@@ -4,10 +4,9 @@ import path from 'path';
 
 const config = {
     dbfilename: path.join(process.cwd(), 'data', 'app.sqlite3'),
-    FAKEPATIENTS: 50,
-    FAKEDOCTORS: 10,
-    FAKEOFFICES: 5,
-    FAKEAPPOINTMENTS: 30
+    FAKEPATIENTS: 500,
+    FAKEDOCTORS: 50,
+    FAKEVISITS: 1000
 };
 
 console.log('--- Start inicjalizacji bazy ---');
@@ -19,9 +18,8 @@ if(!user_version) {
     connection.exec('PRAGMA user_version = 1;');
     connection.exec('PRAGMA foreign_keys = ON');
     
-    console.log('* Tworzenie tabel kliniki (jeśli nie istnieją)...');
+    console.log('* Tworzenie tabel kliniki (zgodnych z Twoim API)...');
     
-    // ZABEZPIECZENIE: Dodano IF NOT EXISTS do każdej tabeli
     connection.exec(`
         CREATE TABLE IF NOT EXISTS patients (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,21 +36,15 @@ if(!user_version) {
             specialization TEXT
         );
 
-        CREATE TABLE IF NOT EXISTS offices (
+        CREATE TABLE IF NOT EXISTS visits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            room_number TEXT UNIQUE NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS appointments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            patient_id INTEGER NOT NULL,
-            doctor_id INTEGER NOT NULL,
-            office_id INTEGER NOT NULL,
-            date_time DATETIME NOT NULL,
+            patientId INTEGER NOT NULL,
+            doctorId INTEGER NOT NULL,
+            visitDate TEXT NOT NULL,
+            room TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'PLANNED',
-            FOREIGN KEY (patient_id) REFERENCES patients(id),
-            FOREIGN KEY (doctor_id) REFERENCES doctors(id),
-            FOREIGN KEY (office_id) REFERENCES offices(id)
+            FOREIGN KEY (patientId) REFERENCES patients(id),
+            FOREIGN KEY (doctorId) REFERENCES doctors(id)
         );
 
         CREATE TABLE IF NOT EXISTS audit_logs (
@@ -76,46 +68,52 @@ if(!user_version) {
         INSERT INTO audit_logs (user_id, user_email, action, entity_type, entity_id, new_data) 
         VALUES (?, ?, ?, ?, ?, ?)
     `);
-    insertAudit.run(1, 'admin@klinika.pl', 'CREATE', 'PATIENT', 1, '{"firstname": "Jan", "lastname": "Kowalski"}');
+    // insertAudit.run(1, 'admin@klinika.pl', 'CREATE', 'PATIENT', 1, '{"firstname": "Jan", "lastname": "Kowalski"}');
 
+    // ====================================================================
+    // TRANSAKCJA: Spinamy wszystko razem dla maksymalnej wydajności
+    // ====================================================================
+    connection.exec('BEGIN TRANSACTION;');
 
     console.log(`* Generowanie ${config.FAKEPATIENTS} pacjentów...`);
     const insertPatient = connection.prepare('INSERT INTO patients (firstname, lastname, pesel, phone) VALUES (?, ?, ?, ?)');
     for(let i = 0; i < config.FAKEPATIENTS; i++) {
-        // Używamy catch w razie gdyby faker wygenerował dwa takie same PESELE (co się zdarza rzadko, ale jednak)
         try {
             insertPatient.run(faker.person.firstName(), faker.person.lastName(), faker.string.numeric(11), faker.phone.number());
         } catch (e) {
-            // Ignorujemy duplikaty PESEL
+            // Ignorujemy duplikaty PESEL od fakera
         }
     }
 
     console.log(`* Generowanie ${config.FAKEDOCTORS} lekarzy...`);
-    const specializations = ['Kardiolog', 'Pediatra', 'Chirurg', 'Dermatolog', 'Okulista'];
+    const specializations = ['Kardiolog', 'Pediatra', 'Chirurg', 'Dermatolog', 'Okulista', 'Neurolog', 'Ortopeda'];
     const insertDoctor = connection.prepare('INSERT INTO doctors (firstname, lastname, specialization) VALUES (?, ?, ?)');
     for(let i = 0; i < config.FAKEDOCTORS; i++) {
         insertDoctor.run(faker.person.firstName(), faker.person.lastName(), faker.helpers.arrayElement(specializations));
     }
 
-    console.log(`* Generowanie ${config.FAKEOFFICES} gabinetów...`);
-    const insertOffice = connection.prepare('INSERT INTO offices (room_number) VALUES (?)');
-    for(let i = 0; i < config.FAKEOFFICES; i++) {
-        insertOffice.run(`Gabinet ${100 + i}`);
-    }
-
-    console.log(`* Generowanie ${config.FAKEAPPOINTMENTS} wizyt...`);
+    console.log(`* Generowanie ${config.FAKEVISITS} wizyt...`);
     const statuses = ['PLANNED', 'COMPLETED', 'CANCELLED'];
-    const insertAppointment = connection.prepare('INSERT INTO appointments (patient_id, doctor_id, office_id, date_time, status) VALUES (?, ?, ?, ?, ?)');
-    for(let i = 0; i < config.FAKEAPPOINTMENTS; i++) {
+    // Aktualizacja pod nowe nazwy kolumn (patientId, doctorId, visitDate, room)
+    const insertVisit = connection.prepare('INSERT INTO visits (patientId, doctorId, visitDate, room, status) VALUES (?, ?, ?, ?, ?)');
+    for(let i = 0; i < config.FAKEVISITS; i++) {
         const p_id = faker.number.int({ min: 1, max: config.FAKEPATIENTS });
         const d_id = faker.number.int({ min: 1, max: config.FAKEDOCTORS });
-        const o_id = faker.number.int({ min: 1, max: config.FAKEOFFICES });
-        const date_time = faker.date.soon({ days: 14 }).toISOString();
+        
+        // Zamiast ID gabinetu, wstawiamy po prostu stringa tak jak w API
+        const room = `Gabinet ${faker.number.int({ min: 100, max: 130 })}`;
+        const visitDate = faker.date.recent({ days: 90 }).toISOString(); 
         const status = faker.helpers.arrayElement(statuses);
-        insertAppointment.run(p_id, d_id, o_id, date_time, status);
+        
+        insertVisit.run(p_id, d_id, visitDate, room, status);
     }
 
-    console.log('--- Baza stworzona i wypełniona pomyślnie ---');
+    // ====================================================================
+    // ZRZUT DO BAZY
+    // ====================================================================
+    connection.exec('COMMIT;');
+
+    console.log('--- Baza stworzona i wypełniona dziesiątkami tysięcy rekordów! ---');
 } else {
     console.log('--- Baza już istnieje (user_version > 0), pomijam generowanie ---');
 }

@@ -49,12 +49,18 @@
 
             <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef style="width: 120px; text-align: center;"> Akcje </th>
-                <td mat-cell *matCellDef="let element">
-                    <button mat-icon-button color="primary" (click)="showCalendar(element)">...</button>
+                <td mat-cell *matCellDef="let element" style="text-align: center;">
+                    
+                    <button mat-icon-button color="primary" (click)="showCalendar(element)" matTooltip="Pokaż grafik lekarza">
+                        <mat-icon>calendar_month</mat-icon>
+                    </button>
                     
                     @if (authService.currentUser()?.roles?.includes(0)) {
-                        <button mat-icon-button color="warn" (click)="deleteDoctor(element.id)">...</button>
+                        <button mat-icon-button color="warn" (click)="deleteDoctor(element.id)" matTooltip="Usuń lekarza z systemu">
+                            <mat-icon>delete</mat-icon>
+                        </button>
                     }
+                    
                 </td>
             </ng-container>
 
