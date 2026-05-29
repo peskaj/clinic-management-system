@@ -1,24 +1,28 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../material/material-module';
 import { PatientService, Patient } from './patient.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 
 @Component({
     selector: 'app-patients',
     standalone: true,
-    imports: [CommonModule, MaterialModule, ReactiveFormsModule],
+    // Dodano MatPaginatorModule do importów
+    imports: [CommonModule, MaterialModule, ReactiveFormsModule, MatPaginatorModule],
     templateUrl: './patients.html',
     styleUrls: ['./patients.css']
 })
-export class Patients implements OnInit {
+export class Patients implements OnInit, AfterViewInit {
     private patientService = inject(PatientService);
     private fb = inject(FormBuilder);
     
-    // Używamy pancernego MatTableDataSource zamiast sygnałów i zwykłych tablic
     dataSource = new MatTableDataSource<Patient>([]);
     displayedColumns: string[] = ['id', 'firstname', 'lastname', 'pesel', 'phone'];
+
+    // Łapiemy paginator z pliku HTML
+    @ViewChild(MatPaginator) paginator!: MatPaginator;
 
     patientForm = this.fb.group({
         firstname: ['', Validators.required],
@@ -31,12 +35,14 @@ export class Patients implements OnInit {
         this.loadPatients();
     }
 
+    // Spinamy paginator ze źródłem danych od razu po załadowaniu widoku
+    ngAfterViewInit() {
+        this.dataSource.paginator = this.paginator;
+    }
+
     loadPatients() {
         this.patientService.getPatients().subscribe({
-            next: (data) => {
-                // To przypisanie gwarantuje natychmiastowe odświeżenie tabeli!
-                this.dataSource.data = data; 
-            },
+            next: (data) => this.dataSource.data = data,
             error: (err) => console.error('Błąd podczas pobierania pacjentów:', err)
         });
     }
@@ -52,6 +58,7 @@ export class Patients implements OnInit {
             });
         }
     }
+
     onFileSelected(event: any) {
         const file: File = event.target.files[0];
         if (file) {
@@ -61,7 +68,6 @@ export class Patients implements OnInit {
                     const content = e.target?.result as string;
                     let parsedData: any[] = [];
 
-                    // Rozpoznajemy format po rozszerzeniu pliku
                     if (file.name.toLowerCase().endsWith('.csv')) {
                         parsedData = this.parseCSV(content);
                     } else {
@@ -84,12 +90,10 @@ export class Patients implements OnInit {
         event.target.value = '';
     }
 
-    // Nowa funkcja tłumacząca CSV na tablicę obiektów
     private parseCSV(text: string): any[] {
         const lines = text.split('\n').filter(line => line.trim().length > 0);
-        if (lines.length < 2) return []; // Potrzebujemy nagłówka i chociaż jednego wiersza
+        if (lines.length < 2) return [];
 
-        // Pobieramy nagłówki i usuwamy białe znaki
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
         const data = [];
 

@@ -1,0 +1,10 @@
+.patients-container {
+    max-height: calc(100vh - 64px); 
+    overflow-y: auto; 
+    padding-bottom: 80px; /* Solidny odstęp od dolnej krawędzi ekranu */
+    box-sizing: border-box; /* Pilnuje, żeby padding nie zepsuł wyliczeń wysokości */
+}
+
+.table-container {
+    margin-bottom: 0; /* Paginator leży teraz idealnie tuż pod samą tabelą */
+}
