@@ -1,7 +1,35 @@
 <div class="patients-container" style="padding: 20px;">
     <h2>Rejestr Pacjentów</h2>
     
-    <table mat-table [dataSource]="patients" class="mat-elevation-z8" style="width: 100%; margin-top: 20px;">
+    <form [formGroup]="patientForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+        
+        <mat-form-field appearance="outline">
+            <mat-label>Imię</mat-label>
+            <input matInput formControlName="firstname" placeholder="Np. Jan">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Nazwisko</mat-label>
+            <input matInput formControlName="lastname" placeholder="Np. Kowalski">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>PESEL</mat-label>
+            <input matInput formControlName="pesel" placeholder="11 cyfr" maxlength="11">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Telefon</mat-label>
+            <input matInput formControlName="phone" placeholder="Np. 123456789">
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="patientForm.invalid" style="height: 56px; margin-bottom: 22px;">
+            <mat-icon>person_add</mat-icon>
+            Dodaj Pacjenta
+        </button>
+    </form>
+
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8" style="width: 100%;">
         <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef> ID </th>
             <td mat-cell *matCellDef="let element"> {{element.id}} </td>

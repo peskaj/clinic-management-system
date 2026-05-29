@@ -20,4 +20,9 @@ export class PatientService {
     getPatients(): Observable<Patient[]> {
         return this.http.get<Patient[]>(this.apiUrl);
     }
+
+    // Nowa metoda do wysyłania danych na serwer
+    addPatient(patient: Omit<Patient, 'id'>): Observable<Patient> {
+        return this.http.post<Patient>(this.apiUrl, patient);
+    }
 }

@@ -4,8 +4,20 @@ import { requireAuth } from '../auth';
 import createError from 'http-errors';
 
 export function initPatientApi(app: Application, db: DatabaseSync) {
+    // 1. Gwarancja istnienia tabeli w bazie
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS patients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            firstname TEXT NOT NULL,
+            lastname TEXT NOT NULL,
+            pesel TEXT UNIQUE,
+            phone TEXT
+        )
+    `);
+
     const accessRoles = [0, 2];
 
+    // 2. Pobieranie wszystkich pacjentów (Tutaj był błąd 404!)
     app.get('/api/patients', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patients = db.prepare('SELECT * FROM patients').all();
@@ -15,6 +27,7 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 3. Pobieranie jednego pacjenta po ID
     app.get('/api/patients/:id', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patientId = Number(req.params.id);
@@ -26,6 +39,7 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 4. Dodawanie nowego pacjenta
     app.post('/api/patients', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
         try {
             const { firstname, lastname, pesel, phone } = req.body;
@@ -40,6 +54,7 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 5. Aktualizacja pacjenta
     app.put('/api/patients/:id', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patientId = Number(req.params.id);
@@ -55,6 +70,7 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // 6. Usuwanie pacjenta
     app.delete('/api/patients/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patientId = Number(req.params.id);
