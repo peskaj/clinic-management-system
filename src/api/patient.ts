@@ -1,3 +1,4 @@
+import { AuditService } from '../services/audit.service'; // Dostosuj ścieżkę, jeśli plik jest w innym folderze
 import { Application, Request, Response, NextFunction } from 'express';
 import { DatabaseSync } from 'node:sqlite';
 import { requireAuth } from '../auth';
@@ -77,11 +78,20 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         try {
             const patientId = Number(req.params.id);
             const { firstname, lastname, pesel, phone } = req.body;
-            const stmt = db.prepare('UPDATE patients SET firstname = ?, lastname = ?, pesel = ?, phone = ? WHERE id = ?');
+            const oldPatient = db.prepare('SELECT * FROM patients WHERE id = ?').get(patientId);
+            const stmt = db.prepare('UPDATE patients SET firstname = ?, lastname = ?, pesel = ?, phone = ? WHERE id = ?');            
             const info = stmt.run(firstname, lastname, pesel || null, phone || null, patientId);
             
             if (info.changes === 0) return next(createError(404, 'Nie znaleziono pacjenta do aktualizacji'));
-            res.json({ message: 'Zaktualizowano pomyślnie' });
+
+            if (info.changes > 0) {
+                // 1. Zapisujemy w audycie (teraz jest kuloodporny)
+                AuditService.log(db, (req as any).user, 'UPDATE', 'PATIENT', patientId, oldPatient, req.body);
+                
+                // 2. Kończymy zapytanie i wysyłamy 200 OK do Angulara
+                res.json({ message: 'Zaktualizowano pomyślnie' });
+            }
+
         } catch (err: any) {
             if (err.message.includes('UNIQUE')) return next(createError(409, 'Inny pacjent ma już ten numer PESEL'));
             next(err);

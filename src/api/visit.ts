@@ -1,6 +1,7 @@
 import { Application, Request, Response, NextFunction } from 'express';
 import { DatabaseSync } from 'node:sqlite';
 import { requireAuth } from '../auth';
+import { AuditService } from '../services/audit.service';
 import createError from 'http-errors';
 
 export function initVisitApi(app: Application, db: DatabaseSync) {
@@ -121,4 +122,27 @@ export function initVisitApi(app: Application, db: DatabaseSync) {
             next(err);
         }
     });
+
+    app.put('/api/visits/:id', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const visitId = Number(req.params.id);
+        const { visitDate, status, room } = req.body; 
+        
+        // 1. Pobieramy stare dane do logu z poprawnej tabeli (visits)
+        const oldVisit = db.prepare('SELECT * FROM visits WHERE id = ?').get(visitId);
+        
+        // 2. Aktualizujemy odpowiednie kolumny w tabeli visits
+        const stmt = db.prepare('UPDATE visits SET visitDate = ?, status = ?, room = ? WHERE id = ?');
+        const info = stmt.run(visitDate, status, room, visitId);
+
+        if (info.changes === 0) return next(createError(404, 'Nie znaleziono wizyty do aktualizacji'));
+
+        // 3. Zapisujemy w audycie i zwracamy sukces
+        AuditService.log(db, (req as any).user, 'UPDATE', 'VISIT', visitId, oldVisit, req.body);
+        res.json({ message: 'Wizyta zaktualizowana pomyślnie' });
+
+    } catch (err) {
+        next(err);
+    }
+});
 }

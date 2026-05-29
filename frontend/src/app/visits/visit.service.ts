@@ -54,4 +54,7 @@ export class VisitService {
     getDoctorVisits(doctorId: number): Observable<any[]> {
         return this.http.get<any[]>(`${this.apiUrl}/doctor/${doctorId}`);
     }
+    updateVisit(id: number, data: any) {
+        return this.http.put(`/api/visits/${id}`, data); 
+    }
 }

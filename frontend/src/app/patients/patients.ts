@@ -6,7 +6,8 @@ import { PatientService, Patient } from './patient.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-
+import { MatDialog } from '@angular/material/dialog';
+import { PatientEditDialog } from './patient-edit'; // Dopasuj ścieżkę
 import { jsPDF } from 'jspdf'; 
 // 1. FIX: Importujemy autoTable jako "efekt uboczny", co omija błędy z brakiem typów
 import 'jspdf-autotable'; 
@@ -24,6 +25,7 @@ export class Patients implements OnInit, AfterViewInit {
     private patientService = inject(PatientService);
     private visitService = inject(VisitService);
     private fb = inject(FormBuilder);
+    private dialog = inject(MatDialog);
     
     dataSource = new MatTableDataSource<Patient>([]);
     displayedColumns: string[] = ['id', 'firstname', 'lastname', 'pesel', 'phone', 'actions'];
@@ -171,5 +173,24 @@ export class Patients implements OnInit, AfterViewInit {
             },
             error: (err) => console.error('Błąd pobierania historii wizyt do PDF:', err)
         });
-    }   
+    }  
+    editPatient(patient: any) {
+        const dialogRef = this.dialog.open(PatientEditDialog, {
+            width: '400px',
+            data: patient // Przekazujemy obecne dane pacjenta do okienka
+        });
+
+        dialogRef.afterClosed().subscribe(updatedData => {
+            if (updatedData) {
+                // Używamy patientService zamiast this.http
+                this.patientService.updatePatient(patient.id, updatedData).subscribe({
+                    next: () => {
+                        this.loadPatients(); // Odświeżamy tabelę po edycji!
+                        console.log('Pacjent zaktualizowany pomyślnie!');
+                    },
+                    error: (err) => console.error('Błąd aktualizacji', err)
+                });
+            }
+        });
+    }
 }

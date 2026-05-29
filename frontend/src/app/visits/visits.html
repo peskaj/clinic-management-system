@@ -73,23 +73,31 @@
 
             <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef> Status </th>
-                <td mat-cell *matCellDef="let element">
-                    <mat-select [value]="element.status || 'zaplanowana'" (selectionChange)="changeStatus(element.id, $event.value)">
-                        <mat-option value="zaplanowana">Zaplanowana</mat-option>
-                        <mat-option value="odbyta">Odbyta</mat-option>
-                        <mat-option value="anulowana">Anulowana</mat-option>
-                    </mat-select>
+                <td mat-cell *matCellDef="let element"> 
+                    @if (element.status === 'PLANNED') {
+                        <span style="color: #1976d2; font-weight: bold;">Zaplanowana</span>
+                    } @else if (element.status === 'COMPLETED') {
+                        <span style="color: #2e7d32; font-weight: bold;">Zakończona</span>
+                    } @else if (element.status === 'CANCELLED') {
+                        <span style="color: #d32f2f; font-weight: bold;">Anulowana</span>
+                    } @else {
+                        {{ element.status }}
+                    }
                 </td>
             </ng-container>
 
             <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef style="text-align: center;"> Akcje </th>
-                <td mat-cell *matCellDef="let element" style="text-align: center;">
-                    <button mat-icon-button color="warn" (click)="deleteVisit(element.id)" type="button">
-                        <mat-icon>delete</mat-icon>
-                    </button>
-                </td>
-            </ng-container>
+    <th mat-header-cell *matHeaderCellDef style="width: 120px; text-align: center;"> Akcje </th>
+    <td mat-cell *matCellDef="let element" style="text-align: center;">
+        
+        @if (authService.currentUser()?.roles?.includes(0) || authService.currentUser()?.roles?.includes(2)) {
+            <button mat-icon-button color="accent" (click)="editVisit(element)" matTooltip="Edytuj wizytę">
+                <mat-icon>edit</mat-icon>
+            </button>
+        }
+        
+    </td>
+</ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>

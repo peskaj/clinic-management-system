@@ -8,6 +8,7 @@ import * as authApi from './api/auth';
 import { initPatientApi } from './api/patient';
 import { initDoctorApi } from './api/doctor';
 import { initVisitApi } from './api/visit';
+import { initAuditApi } from './api/audit';
 
 const config = {
     port: 3000,
@@ -31,9 +32,26 @@ async function startServer() {
 
     // Inicjalizacja API biznesowego dla Przychodni
     const db = new DatabaseSync(config.dbFilename);
+
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_email TEXT NOT NULL,
+        action TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id INTEGER NOT NULL,
+        old_data TEXT,
+        new_data TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        reason TEXT
+    );
+`);
+
     initPatientApi(app, db);
     initDoctorApi(app, db);
     initVisitApi(app, db);
+    initAuditApi(app, db);
 
     // Obsługa błędów API
     app.use('/api', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

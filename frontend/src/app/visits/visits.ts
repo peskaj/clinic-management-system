@@ -1,4 +1,5 @@
 import { AuthService } from '../auth/auth.service';
+import { ChangeDetectorRef } from '@angular/core';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../material/material-module';
@@ -7,6 +8,10 @@ import { PatientService, Patient } from '../patients/patient.service';
 import { DoctorService, Doctor } from '../doctors/doctor.service';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
+
+// BRAKUJĄCE IMPORTY DO DIALOGU:
+import { MatDialog } from '@angular/material/dialog';
+import { VisitEditDialog } from './visit-edit'; // Upewnij się, że plik visit-edit.ts jest w tym samym folderze
 
 @Component({
     selector: 'app-visits',
@@ -21,6 +26,8 @@ export class Visits implements OnInit {
     private patientService = inject(PatientService);
     private doctorService = inject(DoctorService);
     private fb = inject(FormBuilder);
+    private dialog = inject(MatDialog);
+    private cdr = inject(ChangeDetectorRef);
 
     dataSource = new MatTableDataSource<Visit>([]);
     
@@ -43,15 +50,17 @@ export class Visits implements OnInit {
     }
 
     loadVisits() {
-        console.log('RADAR: Odpalam funkcję pobierania...'); // <--- DODAJ TO
-        this.visitService.getVisits().subscribe({
-            next: (data) => {
-                this.dataSource.data = data;
-                console.log('RADAR: Przyszły dane z backendu!', data); // <--- DODAJ TO
-            },
-            error: (err: any) => console.error('Błąd pobierania wizyt:', err)
-        });
-    }
+     this.visitService.getVisits().subscribe({
+         next: (data) => {
+             // Używamy [...data], żeby stworzyć fizycznie nową tablicę w pamięci
+             this.dataSource.data = [...data]; 
+
+             // Wymuszamy na Angularze natychmiastowe odświeżenie HTML-a!
+             this.cdr.detectChanges(); 
+         },
+         error: (err: any) => console.error('Błąd pobierania wizyt:', err)
+     });
+ }
 
     loadDictionaries() {
         this.patientService.getPatients().subscribe(data => this.patients = data);
@@ -93,6 +102,25 @@ export class Visits implements OnInit {
         this.visitService.deleteVisit(id).subscribe({
             next: () => this.loadVisits(),
             error: (err: any) => console.error('Błąd odwoływania wizyty:', err)
+        });
+    }
+
+    editVisit(visit: any) {
+        const dialogRef = this.dialog.open(VisitEditDialog, {
+            width: '400px',
+            data: visit
+        });
+
+        dialogRef.afterClosed().subscribe(updatedData => {
+            if (updatedData) {
+                this.visitService.updateVisit(visit.id, updatedData).subscribe({
+                    next: () => {
+                        this.loadVisits(); // Metoda przeładowująca tabelę wizyt
+                        console.log('Wizyta zaktualizowana!');
+                    },
+                    error: (err) => console.error('Błąd aktualizacji wizyty', err)
+                });
+            }
         });
     }
 }
