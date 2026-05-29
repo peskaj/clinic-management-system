@@ -1,6 +1,7 @@
 <div class="patients-container" style="padding: 20px;">
     <h2>Rejestr Pacjentów</h2>
     
+    @if (authService.currentUser()?.roles?.includes(0) || authService.currentUser()?.roles?.includes(2)) {
     <form [formGroup]="patientForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
         
         <mat-form-field appearance="outline">
@@ -28,6 +29,7 @@
             Dodaj Pacjenta
         </button>
     </form>
+    }
 
     <input type="file" #fileInput (change)="onFileSelected($event)" accept=".json,.csv" style="display: none;">
     <button mat-stroked-button type="button" (click)="fileInput.click()" style="height: 56px; margin-bottom: 22px;">

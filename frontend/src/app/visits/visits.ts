@@ -1,3 +1,4 @@
+import { AuthService } from '../auth/auth.service';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../material/material-module';
@@ -15,6 +16,7 @@ import { MatTableDataSource } from '@angular/material/table';
     styleUrls: ['./visits.css']
 })
 export class Visits implements OnInit {
+    authService = inject(AuthService);
     private visitService = inject(VisitService);
     private patientService = inject(PatientService);
     private doctorService = inject(DoctorService);

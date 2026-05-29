@@ -15,33 +15,31 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         )
     `);
 
-    const accessRoles = [0, 2];
-
     // 2. Pobieranie wszystkich pacjentów (Tutaj był błąd 404!)
-    app.get('/api/patients', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const patients = db.prepare('SELECT * FROM patients').all();
-            res.json(patients);
-        } catch (err) {
-            next(err);
-        }
-    });
+    app.get('/api/patients', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const patients = db.prepare('SELECT * FROM patients').all();
+        res.json(patients);
+    } catch (err) {
+        next(err);
+    }
+});
 
     // 3. Pobieranie jednego pacjenta po ID
-    app.get('/api/patients/:id', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const patientId = Number(req.params.id);
-            const patient = db.prepare('SELECT * FROM patients WHERE id = ?').get(patientId);
-            if (!patient) return next(createError(404, 'Nie znaleziono pacjenta'));
-            res.json(patient);
-        } catch (err) {
-            next(err);
-        }
-    });
+    app.get('/api/patients/:id', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const patientId = Number(req.params.id);
+        const patient = db.prepare('SELECT * FROM patients WHERE id = ?').get(patientId);
+        if (!patient) return next(createError(404, 'Nie znaleziono pacjenta'));
+        res.json(patient);
+    } catch (err) {
+        next(err);
+    }
+});
 
     // 4. Dodawanie nowego pacjenta
     // NOWE: Masowy import pacjentów z pliku
-    app.post('/api/patients/bulk', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
+    app.post('/api/patients/bulk', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patients = req.body;
             if (!Array.isArray(patients)) return next(createError(400, 'Oczekiwano tablicy pacjentów'));
@@ -75,7 +73,7 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
     });
 
     // 5. Aktualizacja pacjenta
-    app.put('/api/patients/:id', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
+    app.put('/api/patients/:id', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patientId = Number(req.params.id);
             const { firstname, lastname, pesel, phone } = req.body;
@@ -91,7 +89,7 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
     });
 
     // 6. Usuwanie pacjenta
-    app.delete('/api/patients/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
+    app.delete('/api/patients/:id', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patientId = Number(req.params.id);
             const stmt = db.prepare('DELETE FROM patients WHERE id = ?');

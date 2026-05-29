@@ -80,7 +80,7 @@ export function initVisitApi(app: Application, db: DatabaseSync) {
         }
     });
 
-    app.post('/api/visits', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
+    app.post('/api/visits', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const { patientId, doctorId, visitDate, room } = req.body;
             if (!patientId || !doctorId || !visitDate || !room) {
@@ -96,7 +96,7 @@ export function initVisitApi(app: Application, db: DatabaseSync) {
     });
 
     // NOWE: Aktualizacja samego statusu wizyty
-    app.patch('/api/visits/:id/status', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
+    app.patch('/api/visits/:id/status', requireAuth(0, 1, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const visitId = Number(req.params.id);
             const { status } = req.body;
@@ -110,7 +110,7 @@ export function initVisitApi(app: Application, db: DatabaseSync) {
         }
     });
 
-    app.delete('/api/visits/:id', requireAuth(...accessRoles), (req: Request, res: Response, next: NextFunction) => {
+    app.delete('/api/visits/:id', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const visitId = Number(req.params.id);
             const stmt = db.prepare('DELETE FROM visits WHERE id = ?');

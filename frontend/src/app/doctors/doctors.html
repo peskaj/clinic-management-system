@@ -1,6 +1,7 @@
 <div class="doctors-container" style="padding: 20px;">
     <h2>Personel Medyczny</h2>
     
+    @if (authService.currentUser()?.roles?.includes(0)) {
     <form [formGroup]="doctorForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
         <mat-form-field appearance="outline">
             <mat-label>Imię</mat-label>
@@ -22,6 +23,7 @@
             Dodaj Lekarza
         </button>
     </form>
+    }
 
     <div class="table-container mat-elevation-z8" style="width: 100%;">
         <table mat-table [dataSource]="dataSource" style="width: 100%;">
@@ -47,13 +49,12 @@
 
             <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef style="width: 120px; text-align: center;"> Akcje </th>
-                <td mat-cell *matCellDef="let element" style="text-align: center;">
-                    <button mat-icon-button color="primary" (click)="showCalendar(element)" title="Pokaż grafik wizyt">
-                        <mat-icon>calendar_month</mat-icon>
-                    </button>
-                    <button mat-icon-button color="warn" (click)="deleteDoctor(element.id)" title="Usuń lekarza">
-                        <mat-icon>delete</mat-icon>
-                    </button>
+                <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button color="primary" (click)="showCalendar(element)">...</button>
+                    
+                    @if (authService.currentUser()?.roles?.includes(0)) {
+                        <button mat-icon-button color="warn" (click)="deleteDoctor(element.id)">...</button>
+                    }
                 </td>
             </ng-container>
 

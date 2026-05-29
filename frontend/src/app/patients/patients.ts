@@ -1,3 +1,4 @@
+import { AuthService } from '../auth/auth.service';
 import { Component, OnInit, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../material/material-module';
@@ -19,6 +20,7 @@ import { VisitService } from '../visits/visit.service';
     styleUrls: ['./patients.css']
 })
 export class Patients implements OnInit, AfterViewInit {
+    authService = inject(AuthService);
     private patientService = inject(PatientService);
     private visitService = inject(VisitService);
     private fb = inject(FormBuilder);

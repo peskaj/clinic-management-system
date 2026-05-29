@@ -1,6 +1,7 @@
 <div class="visits-container" style="padding: 20px;">
     <h2>Rejestracja Wizyt</h2>
 
+    @if (authService.currentUser()?.roles?.includes(0) || authService.currentUser()?.roles?.includes(2)) {
     <form [formGroup]="visitForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
 
         <mat-form-field appearance="outline">
@@ -40,6 +41,7 @@
             Zarejestruj
         </button>
     </form>
+    }
 
     <div class="table-container mat-elevation-z8" style="width: 100%;">
         <table mat-table [dataSource]="dataSource" style="width: 100%;">

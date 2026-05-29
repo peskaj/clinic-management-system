@@ -1,3 +1,4 @@
+import { AuthService } from '../auth/auth.service';
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaterialModule } from '../material/material-module';
@@ -17,6 +18,7 @@ import { Subject } from 'rxjs';
     styleUrls: ['./doctors.css']
 })
 export class Doctors implements OnInit {
+    authService = inject(AuthService);
     private doctorService = inject(DoctorService);
     private visitService = inject(VisitService);
     private fb = inject(FormBuilder);
