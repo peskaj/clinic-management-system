@@ -1,15 +1,23 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { RouterLink, RouterOutlet, RouterModule } from '@angular/router';
 import { MaterialModule } from './material/material-module';
 import { AuthPanel } from './auth/auth-panel';
 import { AuthService } from './auth/auth.service';
 import { routes } from './app.routes';
 
 @Component({
-  selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, MaterialModule, AuthPanel],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+    selector: 'app-root',
+    standalone: true,
+    imports: [
+        CommonModule, 
+        RouterOutlet, 
+        RouterModule, 
+        MaterialModule,
+        AuthPanel // <-- Dodany brakujący komponent!
+    ],
+    templateUrl: './app.html',
+    styleUrls: ['./app.css']
 })
 export class App {
   private auth = inject(AuthService);

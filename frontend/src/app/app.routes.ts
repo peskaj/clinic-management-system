@@ -1,39 +1,14 @@
 import { Routes } from '@angular/router';
 import { Home } from './home/home';
+import { AuthPanel } from './auth/auth-panel';
+import { Settings } from './settings/settings';
+import { Stats } from './stats/stats';
 import { roleGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
-  {
-    path: '',
-    title: 'Strona główna',
-    component: Home,
-    data: { roles: null, icon: 'dashboard' },
-  },
-  {
-    path: 'stats',
-    title: 'Statystyki',
-    loadComponent: () => import('./stats/stats').then(m => m.Stats),
-    data: { roles: null, icon: 'poll' },
-  },
-  {
-    path: 'persons',
-    title: 'Osoby',
-    canMatch: [roleGuard],
-    loadComponent: () => import('./persons/persons').then(m => m.Persons),
-    data: { roles: [0, 1], icon: 'people' },
-  },
-  {
-    path: 'projects',
-    title: 'Projekty',
-    canMatch: [roleGuard],
-    loadComponent: () => import('./projects/projects').then(m => m.Projects),
-    data: { roles: [0, 1], icon: 'work' },
-  },
-  {
-    path: 'settings',
-    title: 'Ustawienia',
-    canMatch: [roleGuard],
-    loadComponent: () => import('./settings/settings').then(m => m.Settings),
-    data: { roles: [0], icon: 'settings' },
-  }
+    { path: '', component: Home },
+    { path: 'auth', component: AuthPanel },
+    { path: 'settings', component: Settings, canMatch: [roleGuard] },
+    { path: 'stats', component: Stats, canMatch: [roleGuard] },
+    { path: '**', redirectTo: '' }
 ];

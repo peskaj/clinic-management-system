@@ -48,14 +48,14 @@ async function startServer() {
 
     // Serwowanie statycznych plików Angulara
     app.use(express.static(path.join(__dirname, '../frontend/dist/frontend/browser')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/dist/frontend/browser/index.html'));
+    app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/frontend/browser/index.html'));
     });
 
     // Start serwera
     app.listen(config.port, () => {
         console.log(`Server listening on port ${config.port}`);
     });
-}
+    }
 
 startServer().catch(console.error);
