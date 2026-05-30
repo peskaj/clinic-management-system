@@ -28,7 +28,7 @@
 
         <mat-form-field appearance="outline">
             <mat-label>Data i czas wizyty</mat-label>
-            <input matInput type="datetime-local" formControlName="visitDate">
+            <input matInput type="datetime-local" formControlName="visitDate" min="1900-01-01T00:00" max="9999-12-31T23:59">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -43,7 +43,7 @@
     </form>
     }
 
-    <div class="table-container mat-elevation-z8" style="width: 100%;">
+    <div class="mat-elevation-z8" style="margin-bottom: 30px;">
         <table mat-table [dataSource]="dataSource" style="width: 100%;">
             
             <ng-container matColumnDef="id">
@@ -87,20 +87,23 @@
             </ng-container>
 
             <ng-container matColumnDef="actions">
-    <th mat-header-cell *matHeaderCellDef style="width: 120px; text-align: center;"> Akcje </th>
-    <td mat-cell *matCellDef="let element" style="text-align: center;">
-        
-        @if (authService.currentUser()?.roles?.includes(0) || authService.currentUser()?.roles?.includes(2)) {
-            <button mat-icon-button color="accent" (click)="editVisit(element)" matTooltip="Edytuj wizytę">
-                <mat-icon>edit</mat-icon>
-            </button>
-        }
-        
-    </td>
-</ng-container>
+                <th mat-header-cell *matHeaderCellDef style="width: 120px; text-align: center;"> Akcje </th>
+                <td mat-cell *matCellDef="let element" style="text-align: center;">
+                    @if (authService.currentUser()?.roles?.includes(0) || authService.currentUser()?.roles?.includes(2)) {
+                        <button mat-icon-button color="accent" (click)="editVisit(element)" matTooltip="Edytuj wizytę">
+                            <mat-icon>edit</mat-icon>
+                        </button>
+                    }
+                </td>
+            </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
+
+        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]"
+                       showFirstLastButtons
+                       aria-label="Wybierz stronę wizyt">
+        </mat-paginator>
     </div>
 </div>

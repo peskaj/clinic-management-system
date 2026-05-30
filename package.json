@@ -1,7 +1,7 @@
 {
   "name": "paw2026",
   "version": "1.0.0",
-  "description": "Programowanie aplikacji webowych 2026z",
+  "description": "Programowanie aplikacji webowych 2026z - Przychodnia lekarska",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

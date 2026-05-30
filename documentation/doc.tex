@@ -1,0 +1,264 @@
+\documentclass[a4paper,12pt]{report}
+
+% Pakiety językowe i czcionki
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+
+% Pakiety formatujące i graficzne
+\usepackage{geometry}
+\geometry{a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{makeidx}
+
+% Pakiety do diagramów
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.multipart, arrows.meta, backgrounds}
+
+% Ustawienia linków i kolorów
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Dokumentacja Techniczna Systemu Medycznego},
+}
+
+% Definicje kolorów dla statusów i ról
+\definecolor{statusPlanned}{HTML}{1976D2}
+\definecolor{statusCompleted}{HTML}{2E7D32}
+\definecolor{statusCancelled}{HTML}{D32F2F}
+
+\makeindex
+
+\title{
+    \vspace{2cm}
+    \Huge \textbf{Dokumentacja Techniczna Systemu Zarządzania Kliniką}\\
+    \vspace{1cm}
+    \Large Architektura, API oraz Wymagania Funkcjonalne
+    \vspace{2cm}
+}
+\author{Jakub Peska}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+% ---------------------------------------------------------
+% ROZDZIAŁ 1
+% ---------------------------------------------------------
+\chapter{Wprowadzenie}
+\section{Cel dokumentu}
+Niniejszy dokument stanowi autorytatywną specyfikację techniczną systemu do zarządzania placówką medyczną. Obejmuje on zbiór wymagań funkcjonalnych, model relacyjny bazy danych oraz interfejs programistyczny aplikacji (API) dla backendu. 
+
+\section{Założenia architektoniczne}
+Fundamentem architektury opisywanego systemu jest absolutna transparentność wszystkich procesów przetwarzania danych. System został zaprojektowany z myślą o zapewnieniu pełnej widoczności realizowanych operacji, co niweluje zjawisko "ukrytych błędów" lub nieautoryzowanych modyfikacji. Narzędziem realizującym to założenie jest wbudowany, kuloodporny \index{AuditService} \texttt{AuditService}, który działa analogicznie do czarnej skrzynki, utrwalając każdy stan encji przed i po jej modyfikacji.
+
+% ---------------------------------------------------------
+% ROZDZIAŁ 2
+% ---------------------------------------------------------
+\chapter{Wymagania Funkcjonalne}
+\section{Wstęp}
+Moduł ten opisuje wymagania funkcjonalne postawione przed aplikacją ze szczególnym uwzględnieniem zarządzania zasobami ludzkimi (pacjenci, lekarze) oraz wizytami, a także definiuje zasady bezpieczeństwa (autoryzacja na podstawie ról).
+
+\section{Przypadki Użycia i Zachowanie Systemu}
+
+\subsection{Zarządzanie Wizytami (Appointments/Visits)}
+\begin{itemize}
+    \item \textbf{Modyfikacja Wizyty:} Uprawnieni użytkownicy (Rola 0 - Administrator, Rola 2 - Recepcja) mogą edytować istniejące wizyty za pomocą dedykowanych okien dialogowych (\index{Material Design} Angular Material).
+    \item \textbf{Zarządzanie statusem:} Wizyty posiadają zdefiniowaną maszynę stanów: \texttt{PLANNED}, \texttt{COMPLETED}, \texttt{CANCELLED}. Na warstwie prezentacji stany te są wyróżniane za pomocą dedykowanej palety barw.
+    \item \textbf{Śledzenie zmian:} Każda edycja wizyty jest przechwytywana, a stan poprzedni i nowy jest utrwalany w logach audytu.
+\end{itemize}
+
+\subsection{Zarządzanie Lekarzami}
+\begin{itemize}
+    \item \textbf{Podgląd harmonogramu:} Użytkownik posiada dostęp do kalendarza pracy wybranego lekarza.
+    \item \textbf{Usuwanie konta lekarza:} Operacja usunięcia lekarza z systemu wymusza zastosowanie kaskadowego usuwania przypisanych mu wizyt. Zapobiega to naruszeniu więzów spójności (\index{Foreign Key} Foreign Key Constraint). Operacja usunięcia całego węzła jest raportowana w audycie. Wyłącznie administratorzy (Rola 0) posiadają uprawnienia do tej akcji.
+\end{itemize}
+
+\subsection{Zarządzanie Pacjentami}
+\begin{itemize}
+    \item \textbf{Zarządzanie danymi:} Edycja profilu pacjenta (imię, nazwisko, PESEL, numer telefonu).
+    \item \textbf{Zabezpieczenie przed duplikacją:} PESEL posiada unikalny klucz (\texttt{UNIQUE}), wymuszający weryfikację na poziomie silnika bazy danych.
+\end{itemize}
+
+\subsection{System Audytu (Blackbox) i Inicjalizacja}
+\begin{itemize}
+    \item \textbf{Logowanie Akcji:} Moduł bezwzględnie rejestrujący żądania modyfikujące stan (PUT, DELETE). Zapisuje kto, kiedy, dlaczego oraz co zmienił.
+    \item \textbf{Masowe zasilanie danymi (Seeder):} System jest zoptymalizowany pod obciążenia. Moduł \texttt{createdb.mjs} integruje \index{Faker} \texttt{FakerPL} w celu transakcyjnego zasilenia bazy minimum 10 000 pacjentów oraz 50 000 wizyt, generując potężny wolumen danych w kilka sekund dzięki instrukcjom \texttt{BEGIN} i \texttt{COMMIT}.
+\end{itemize}
+
+\section{Podsumowanie modułu}
+System realizuje pełen cykl życia obiektów medycznych, kładąc szczególny nacisk na asynchroniczne odświeżanie interfejsu za pomocą mechanizmów detekcji zmian (ChangeDetection) w frameworku Angular oraz na spójność danych.
+
+% ---------------------------------------------------------
+% ROZDZIAŁ 3
+% ---------------------------------------------------------
+\chapter{Diagram Bazy Danych}
+\section{Wstęp}
+Silnikiem bazodanowym systemu jest relacyjna baza \index{SQLite} \texttt{SQLite}. Skrypt inicjalizacyjny zapewnia budowę struktur opartych o rygorystyczne więzy integralności (Foreign Keys = ON). 
+
+\section{Schemat ERD (Entity-Relationship Diagram)}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=2cm and 2cm,
+    table/.style={
+        rectangle split,
+        rectangle split parts=2,
+        draw,
+        rounded corners=2pt,
+        align=left,
+        text width=4.5cm,
+        font=\sffamily\footnotesize
+    },
+    header/.style={
+        fill=blue!10,
+        font=\sffamily\bfseries\small
+    }
+]
+
+% Tabela: Patients
+\node[table] (patients) {
+    \nodepart{one} \textbf{patients}
+    \nodepart{two}
+    \textbf{id}: INTEGER (PK) \\
+    firstname: TEXT \\
+    lastname: TEXT \\
+    pesel: TEXT (UNIQUE) \\
+    phone: TEXT
+};
+
+% Tabela: Doctors
+\node[table, right=2cm of patients] (doctors) {
+    \nodepart{one} \textbf{doctors}
+    \nodepart{two}
+    \textbf{id}: INTEGER (PK) \\
+    firstname: TEXT \\
+    lastname: TEXT \\
+    specialization: TEXT
+};
+
+% Tabela: Visits
+\node[table, below=2.5cm of patients, xshift=3.5cm] (visits) {
+    \nodepart{one} \textbf{visits}
+    \nodepart{two}
+    \textbf{id}: INTEGER (PK) \\
+    patientId: INTEGER (FK) \\
+    doctorId: INTEGER (FK) \\
+    visitDate: TEXT \\
+    room: TEXT \\
+    status: TEXT (DEFAULT 'PLANNED')
+};
+
+% Tabela: Audit Logs
+\node[table, below=2cm of visits] (audit) {
+    \nodepart{one} \textbf{audit\_logs}
+    \nodepart{two}
+    \textbf{id}: INTEGER (PK) \\
+    user\_id: INTEGER \\
+    user\_email: TEXT \\
+    action: TEXT \\
+    entity\_type: TEXT \\
+    entity\_id: INTEGER \\
+    old\_data: TEXT \\
+    new\_data: TEXT \\
+    timestamp: DATETIME \\
+    reason: TEXT
+};
+
+% Relacje
+\draw[-{Latex[length=3mm]}] (visits.north) -- +(0,0.5) -| (patients.south) node[pos=0.25, left, font=\scriptsize] {1..N};
+\draw[-{Latex[length=3mm]}] (visits.north) -- +(0,0.5) -| (doctors.south) node[pos=0.25, right, font=\scriptsize] {1..N};
+
+\draw[dashed, gray] (visits.east) -| +(1.5,-2) |- (audit.east) node[pos=0.25, right, font=\scriptsize, align=center] {Rejestr \\ zmian (log)};
+
+\end{tikzpicture}
+\caption{Struktura relacyjna bazy danych SQLite}
+\label{fig:erd}
+\end{figure}
+
+\section{Szczegóły struktury i indeksowanie}
+Tabela \texttt{audit\_logs} posiada indeks \texttt{idx\_audit\_entity} obejmujący kolumny \texttt{entity\_type} oraz \texttt{entity\_id}. Ograniczenie to gwarantuje subsekundowe czasy odpowiedzi podczas generowania historii zmian dla danego zasobu (pacjenta lub wizyty), nawet przy dziesiątkach tysięcy wpisów. Zastosowano konwencję nazewnictwa kluczy obcych camelCase (np. \texttt{patientId}) dla ujednolicenia z interfejsem warstwy backendu (Node.js/Express).
+
+% ---------------------------------------------------------
+% ROZDZIAŁ 4
+% ---------------------------------------------------------
+\chapter{Specyfikacja API Backendu}
+\section{Wstęp}
+Warstwa serwerowa została zrealizowana w środowisku Node.js z wykorzystaniem frameworka Express. Komunikacja odbywa się w standardzie \index{REST API} REST, a ładunki użyteczne wymieniane są w formacie JSON. Wszystkie ścieżki podlegają uwierzytelnieniu za pośrednictwem odpowiednich middleware (funkcja \texttt{requireAuth}).
+
+\section{Kluczowe Endpointy}
+
+\subsection{Aktualizacja Wizyty}
+Służy do edycji parametrów zaplanowanej lub zakończonej wizyty. \index{Endpoint} Endpoint wbudowuje mechanizm automatycznego zapisu do audytu.\\
+
+\noindent
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Metoda HTTP} & \texttt{PUT} \\ \hline
+\textbf{Ścieżka} & \texttt{/api/visits/:id} \\ \hline
+\textbf{Wymagane role} & \texttt{0} (Admin), \texttt{2} (Recepcja) \\ \hline
+\textbf{Parametry ścieżki} & \texttt{id} (Number) - Unikalny identyfikator wizyty. \\ \hline
+\textbf{Request Body} & 
+\vspace{-4mm}
+\begin{verbatim}
+{
+  "visitDate": "2026-05-12T10:30",
+  "status": "COMPLETED",
+  "room": "Gabinet 112"
+}
+\end{verbatim}
+\vspace{-4mm}
+\\ \hline
+\textbf{Odpowiedź (Sukces)} & \texttt{200 OK} - \texttt{\{"message": "Wizyta zaktualizowana pomyślnie"\}} \\ \hline
+\textbf{Możliwe błędy} & \texttt{404 Not Found} (Gdy wizyta nie istnieje), \texttt{500 Internal Server Error} (Błąd constraintów SQL) \\ \hline
+\end{tabularx}
+
+\vspace{1cm}
+
+\subsection{Usuwanie Lekarza}
+Wykonuje trwałe usunięcie zasobu lekarza z bazy danych wraz z \textbf{kaskadowym usunięciem} powiązanych wizyt. \index{Kaskadowe Usuwanie}\\
+
+\noindent
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Metoda HTTP} & \texttt{DELETE} \\ \hline
+\textbf{Ścieżka} & \texttt{/api/doctors/:id} \\ \hline
+\textbf{Wymagane role} & \texttt{0} (Admin) \\ \hline
+\textbf{Parametry ścieżki} & \texttt{id} (Number) - Unikalny identyfikator lekarza. \\ \hline
+\textbf{Logika Biznesowa} & Silnik najpierw egzekwuje \texttt{DELETE FROM visits WHERE doctorId = ?}, zwalniając blokadę \texttt{Foreign Key}, po czym usuwa rekord z tabeli \texttt{doctors}. Następuje zapis encji usuniętej do audytu z odpowiednią flagą. \\ \hline
+\textbf{Odpowiedź (Sukces)} & \texttt{200 OK} - \texttt{\{"message": "Lekarz i jego wizyty zostali trwale usunięci z systemu."\}} \\ \hline
+\end{tabularx}
+
+\section{Podsumowanie modułu}
+Architektura interfejsu programistycznego rygorystycznie chroni integralność relacyjną danych. Middleware autoryzacyjne działają jak strażnik dostępu, a serwis logujący gwarantuje odporność na uszkodzenia operacyjne w sytuacji, gdy rekord źródłowy zostaje usunięty.
+
+% ---------------------------------------------------------
+% BIBLIOGRAFIA (Przykładowa)
+% ---------------------------------------------------------
+\begin{thebibliography}{9}
+\bibitem{angular}
+  Zespół Google, \emph{Angular Documentation}, 2026.
+\bibitem{sqlite}
+  D. Richard Hipp, \emph{SQLite Database Architecture}, 2026.
+\bibitem{faker}
+  Faker.js Community, \emph{FakerPL - Generowanie zbiorów testowych}, 2026.
+\end{thebibliography}
+
+% ---------------------------------------------------------
+% INDEKS
+% ---------------------------------------------------------
+\printindex
+
+\end{document}
