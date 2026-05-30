@@ -38,7 +38,8 @@
     "jspdf-autotable": "^5.0.8",
     "morgan": "^1.10.1",
     "passport": "^0.7.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "pdfmake": "^0.3.9"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

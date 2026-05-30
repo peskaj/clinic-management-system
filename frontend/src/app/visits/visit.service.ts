@@ -19,9 +19,8 @@ export interface VisitCreate {
     patientId: number;
     doctorId: number;
     visitDate: string;
-    room: string;
+    // całkowicie usunięto linijkę z 'room'
 }
-
 @Injectable({
     providedIn: 'root'
 })
@@ -56,5 +55,9 @@ export class VisitService {
     }
     updateVisit(id: number, data: any) {
         return this.http.put(`/api/visits/${id}`, data); 
+    }
+    // Pobieranie wolnych slotów dla konkretnego lekarza
+    getAvailableSlots(doctorId: number): Observable<string[]> {
+        return this.http.get<string[]>(`${this.apiUrl}/available-slots/${doctorId}`);
     }
 }

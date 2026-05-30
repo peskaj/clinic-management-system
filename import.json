@@ -1,0 +1,12 @@
+[
+  { "firstname": "Jan", "lastname": "Kowalski", "pesel": "80010112345", "phone": "111-222-333" },
+  { "firstname": "Anna", "lastname": "Nowak", "pesel": "90020223456", "phone": "+48222333444" },
+  { "firstname": "Piotr", "lastname": "Wiśniewski", "pesel": "75030334567", "phone": "333-444-555" },
+  { "firstname": "Maria", "lastname": "Wójcik", "pesel": "88040445678", "phone": "444-555-666" },
+  { "firstname": "Tomasz", "lastname": "Kamiński", "pesel": "95050556789", "phone": "+48555666777" },
+  { "firstname": "Magdalena", "lastname": "Lewandowska", "pesel": "92060667890", "phone": "666-777-888" },
+  { "firstname": "Krzysztof", "lastname": "Zieliński", "pesel": "81070778901", "phone": "777-888-999" },
+  { "firstname": "Ewa", "lastname": "Szymańska", "pesel": "79080889012", "phone": "888-999-000" },
+  { "firstname": "Michał", "lastname": "Woźniak", "pesel": "99090990123", "phone": "+48999000111" },
+  { "firstname": "Katarzyna", "lastname": "Dąbrowska", "pesel": "91101001234", "phone": "000-111-222" }
+]

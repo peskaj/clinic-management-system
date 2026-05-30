@@ -193,4 +193,16 @@ export class Patients implements OnInit, AfterViewInit {
             }
         });
     }
+
+    // Metoda usuwająca pacjenta
+    deletePatient(id: number) {
+        if (confirm('UWAGA! Usunięcie pacjenta wykasuje również całą jego historię wizyt z bazy. Czy na pewno chcesz kontynuować?')) {
+            this.patientService.deletePatient(id).subscribe({
+                next: () => {
+                    this.loadPatients(); // Przeładowujemy tabelę po sukcesie
+                },
+                error: (err: any) => console.error('Błąd usuwania pacjenta:', err)
+            });
+        }
+    }
 }

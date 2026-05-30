@@ -16,7 +16,7 @@ import { VisitEditDialog } from './visit-edit';
 @Component({
     selector: 'app-visits',
     standalone: true,
-    imports: [CommonModule, MaterialModule, ReactiveFormsModule, MatPaginatorModule], // Paginator gotowy do akcji
+    imports: [CommonModule, MaterialModule, ReactiveFormsModule, MatPaginatorModule],
     templateUrl: './visits.html',
     styleUrls: ['./visits.css']
 })
@@ -31,20 +31,32 @@ export class Visits implements OnInit, AfterViewInit {
 
     dataSource = new MatTableDataSource<Visit>([]);
     
-    // Łapiemy paginator z pliku HTML
-    @ViewChild(MatPaginator) paginator!: MatPaginator;
+    private paginator!: MatPaginator;
+
+    @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
+        if (mp) {
+            this.paginator = mp;
+            this.dataSource.paginator = this.paginator;
+        }
+    }
     
-    // Żelazna lista kolumn (musi idealnie pasować do HTML)
+    // Żelazna lista kolumn (musi idealnie pasować do HTML) - room zostaje w widoku!
     displayedColumns: string[] = ['id', 'patient', 'doctor', 'visitDate', 'room', 'status', 'actions'];
 
     patients: Patient[] = [];
     doctors: Doctor[] = [];
 
+    // NOWE: Tablica na wolne terminy wyciągnięte z backendu
+    availableSlots: string[] = [];
+    
+    // NOWE: Przechowuje nazwę automatycznie wczytanego gabinetu
+    selectedRoomName: string = '';
+
+    // ZMODYFIKOWANE: Wyrzucamy 'room', bo backend sam to przypisze
     visitForm = this.fb.group({
         patientId: [null as number | null, Validators.required],
         doctorId: [null as number | null, Validators.required],
-        visitDate: ['', Validators.required],
-        room: ['', Validators.required]
+        visitDate: ['', Validators.required]
     });
 
     ngOnInit() {
@@ -53,22 +65,14 @@ export class Visits implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
-        // Spinamy paginator z tabelą od razu, gdy Angular wyrenderuje widok
         this.dataSource.paginator = this.paginator;
     }
 
     loadVisits() {
         this.visitService.getVisits().subscribe({
             next: (data) => {
-                // Używamy [...data], żeby stworzyć fizycznie nową tablicę w pamięci
-                this.dataSource.data = [...data]; 
-
-                // Zabezpieczenie: upewniamy się, że po pobraniu danych paginator dalej jest podpięty
-                if (this.paginator) {
-                    this.dataSource.paginator = this.paginator;
-                }
-
-                // Wymuszamy na Angularze natychmiastowe odświeżenie HTML-a
+                // Po prostu przypisujemy dane, a podpięty wyżej setter sam zajmie się wyliczeniem stron
+                this.dataSource.data = data; 
                 this.cdr.detectChanges(); 
             },
             error: (err: any) => console.error('Błąd pobierania wizyt:', err)
@@ -80,21 +84,49 @@ export class Visits implements OnInit, AfterViewInit {
         this.doctorService.getDoctors().subscribe(data => this.doctors = data);
     }
 
+    // NOWE: Metoda odpalana po wybraniu lekarza z listy rozwijanej
+    onDoctorSelected(doctorId: any) {
+        const id = Number(doctorId);
+        if (id) {
+            // Czyścimy wcześniej wybraną datę, by zapobiec błędom
+            this.visitForm.get('visitDate')?.setValue(null); 
+            
+            // NOWE: Automatyczne znalezienie gabinetu w profilu lekarza
+            const doctor = this.doctors.find(d => d.id === id);
+            // Ponieważ użyliśmy 'any', kompilator nie będzie krzyczał o brakujące pole roomName z LEFT JOIN
+            this.selectedRoomName = (doctor as any)?.roomName || 'Brak przypisanego gabinetu';
+
+            // Pobieramy świeże okienka z backendu
+            this.visitService.getAvailableSlots(id).subscribe({
+                next: (slots) => {
+                    this.availableSlots = slots;
+                    this.cdr.detectChanges(); // Wymuszamy aktualizację widoku
+                },
+                error: (err) => console.error('Błąd pobierania terminów:', err)
+            });
+        } else {
+            this.availableSlots = [];
+            this.selectedRoomName = ''; // Czyścimy nazwę, gdy odznaczono lekarza
+        }
+    }
+
     onSubmit() {
         if (this.visitForm.valid) {
             const formVal = this.visitForm.value;
+            
+            // ZMODYFIKOWANE: Paczka danych wysyłana na backend (bez pokoju)
             const newVisit = {
                 patientId: formVal.patientId as number,
                 doctorId: formVal.doctorId as number,
-                visitDate: formVal.visitDate as string,
-                room: formVal.room as string
+                visitDate: formVal.visitDate as string
             };
 
             this.visitService.addVisit(newVisit).subscribe({
                 next: () => {
                     this.loadVisits();
                     this.visitForm.reset();
-                    // Resetowanie wizualnych błędów po dodaniu
+                    this.availableSlots = []; // Chowamy kafelki po sukcesie
+                    
                     Object.keys(this.visitForm.controls).forEach(key => {
                         this.visitForm.get(key)?.setErrors(null);
                     });
@@ -128,7 +160,7 @@ export class Visits implements OnInit, AfterViewInit {
             if (updatedData) {
                 this.visitService.updateVisit(visit.id, updatedData).subscribe({
                     next: () => {
-                        this.loadVisits(); // Metoda przeładowująca tabelę wizyt
+                        this.loadVisits(); 
                         console.log('Wizyta zaktualizowana!');
                     },
                     error: (err) => console.error('Błąd aktualizacji wizyty', err)

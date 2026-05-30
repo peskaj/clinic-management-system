@@ -9,6 +9,7 @@ import { initPatientApi } from './api/patient';
 import { initDoctorApi } from './api/doctor';
 import { initVisitApi } from './api/visit';
 import { initAuditApi } from './api/audit';
+import { initOfficeApi } from './api/office';
 
 const config = {
     port: 3000,
@@ -52,6 +53,7 @@ async function startServer() {
     initDoctorApi(app, db);
     initVisitApi(app, db);
     initAuditApi(app, db);
+    initOfficeApi(app, db);
 
     // Obsługa błędów API
     app.use('/api', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -71,5 +73,6 @@ async function startServer() {
         console.log(`Server listening on port ${config.port}`);
     });
     }
+    
 
 startServer().catch(console.error);

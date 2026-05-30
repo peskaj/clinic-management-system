@@ -1,0 +1,92 @@
+<div class="offices-container" style="padding: 20px; max-height: calc(100vh - 64px); overflow-y: auto; overflow-x: hidden; box-sizing: border-box;">
+    <h2>Zarządzanie Gabinetami</h2>
+    
+    @if (authService.currentUser()?.roles?.includes(0)) {
+    <form [formGroup]="officeForm" (ngSubmit)="onSubmit()" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+        
+        <mat-form-field appearance="outline">
+            <mat-label>Numer / Nazwa Gabinetu</mat-label>
+            <input matInput formControlName="name" placeholder="np. 101, USG, Główny">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Typ Gabinetu</mat-label>
+            <mat-select formControlName="type">
+                <mat-option value="Konsultacyjny">Konsultacyjny</mat-option>
+                <mat-option value="Zabiegowy">Zabiegowy</mat-option>
+                <mat-option value="Diagnostyczny">Diagnostyczny (USG/RTG)</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Przypisz Lekarza</mat-label>
+            <mat-select formControlName="doctorId">
+                <mat-option [value]="null">-- Brak (wolny gabinet) --</mat-option>
+                @for (doctor of doctors; track $index) {
+                    <mat-option [value]="doctor.id">
+                        {{ doctor.firstname }} {{ doctor.lastname }} ({{ doctor.specialization }})
+                    </mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="officeForm.invalid" style="height: 56px; margin-bottom: 22px;">
+            <mat-icon>meeting_room</mat-icon>
+            Dodaj Gabinet
+        </button>
+    </form>
+    }
+
+    <div class="mat-elevation-z8" style="margin-bottom: 30px; border-radius: 8px; overflow: hidden;">
+        
+        <div class="table-scroll-container">
+            <table mat-table [dataSource]="dataSource">
+                
+                <ng-container matColumnDef="id">
+                    <th mat-header-cell *matHeaderCellDef> ID </th>
+                    <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef> Nazwa / Numer </th>
+                    <td mat-cell *matCellDef="let element"> <strong>{{element.name}}</strong> </td>
+                </ng-container>
+
+                <ng-container matColumnDef="type">
+                    <th mat-header-cell *matHeaderCellDef> Typ </th>
+                    <td mat-cell *matCellDef="let element"> {{element.type}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="assignedDoctor">
+                    <th mat-header-cell *matHeaderCellDef> Przypisany Lekarz </th>
+                    <td mat-cell *matCellDef="let element"> 
+                        @if(element.assignedDoctor) {
+                            <span style="color: #2e7d32; font-weight: 500;">{{element.assignedDoctor}}</span>
+                        } @else {
+                            <span style="color: #9e9e9e; font-style: italic;">Wolny</span>
+                        }
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef style="width: 140px; text-align: center;"> Akcje </th>
+                    <td mat-cell *matCellDef="let element" style="text-align: center; white-space: nowrap;">
+                        @if (authService.currentUser()?.roles?.includes(0)) {
+                            <button mat-icon-button color="accent" (click)="editOffice(element)" matTooltip="Edytuj gabinet">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button mat-icon-button color="warn" (click)="deleteOffice(element.id)" matTooltip="Usuń gabinet">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        }
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+        </div>
+        
+        <mat-paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons aria-label="Wybierz stronę gabinetów"></mat-paginator>
+    </div>
+</div>

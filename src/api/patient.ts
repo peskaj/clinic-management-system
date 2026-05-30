@@ -38,8 +38,12 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
     }
 });
 
-    // 4. Dodawanie nowego pacjenta
-    // NOWE: Masowy import pacjentów z pliku
+    // ==========================================
+    // 4. Dodawanie pacjentów (Masowe oraz Pojedyncze)
+    // ==========================================
+
+    // A) NOWE/MASOWE: Masowy import pacjentów z pliku (BULK)
+    // Ważne, aby ten endpoint był WYŻEJ, przed ogólnym POST /api/patients
     app.post('/api/patients/bulk', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patients = req.body;
@@ -73,6 +77,60 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
         }
     });
 
+    // B) POJEDYNCZE: Dodawanie jednego pacjenta z formularza
+    app.post('/api/patients', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { firstname, lastname, pesel, phone } = req.body;
+            
+            // Walidacja pól wymaganych
+            if (!firstname || !lastname) {
+                return next(createError(400, 'Imię i nazwisko są wymagane'));
+            }
+
+            const stmt = db.prepare('INSERT INTO patients (firstname, lastname, pesel, phone) VALUES (?, ?, ?, ?)');
+            const info = stmt.run(firstname, lastname, pesel || null, phone || null);
+
+            res.status(201).json({ 
+                message: 'Dodano pacjenta pomyślnie',
+                id: info.lastInsertRowid 
+            });
+
+        } catch (err: any) {
+            if (err.message.includes('UNIQUE')) {
+                return next(createError(409, 'Pacjent z tym numerem PESEL już istnieje'));
+            }
+            next(err);
+        }
+    });
+// Trwałe usuwanie pacjenta (tylko dla Admina - rola 0)
+    app.delete('/api/patients/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const patientId = Number(req.params.id);
+
+            // 1. ZANIM usuniemy, łapiemy dane do logu audytu
+            const oldPatient = db.prepare('SELECT * FROM patients WHERE id = ?').get(patientId);
+            if (!oldPatient) return next(createError(404, 'Nie znaleziono pacjenta'));
+
+            // 2. Startujemy twardą transakcję, by zachować absolutną spójność
+            db.exec('BEGIN TRANSACTION');
+
+            // 3. Najpierw usuwamy z bazy wszystkie wizyty tego pacjenta (zwalnia klucz obcy)
+            db.prepare('DELETE FROM visits WHERE patientId = ?').run(patientId);
+
+            // 4. Teraz bezpiecznie usuwamy samego pacjenta
+            db.prepare('DELETE FROM patients WHERE id = ?').run(patientId);
+
+            db.exec('COMMIT');
+
+            // 5. Zostawiamy niezatarty ślad w audycie
+            AuditService.log(db, (req as any).user, 'DELETE', 'PATIENT', patientId, oldPatient, null, 'Usunięto pacjenta oraz całą jego historię wizyt');
+
+            res.json({ message: 'Pacjent i jego wizyty zostali trwale usunięci.' });
+        } catch (err) {
+            db.exec('ROLLBACK'); // W razie awarii cofamy wszystko
+            next(err);
+        }
+    });
     // 5. Aktualizacja pacjenta
     app.put('/api/patients/:id', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -99,14 +157,32 @@ export function initPatientApi(app: Application, db: DatabaseSync) {
     });
 
     // 6. Usuwanie pacjenta
-    app.delete('/api/patients/:id', requireAuth(0, 2), (req: Request, res: Response, next: NextFunction) => {
+    // Trwałe usuwanie pacjenta (tylko dla Admina - rola 0)
+    app.delete('/api/patients/:id', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
         try {
             const patientId = Number(req.params.id);
-            const stmt = db.prepare('DELETE FROM patients WHERE id = ?');
-            const info = stmt.run(patientId);
-            if (info.changes === 0) return next(createError(404, 'Nie znaleziono pacjenta do usunięcia'));
-            res.json({ message: 'Usunięto pomyślnie' });
+
+            // 1. ZANIM usuniemy, łapiemy dane do logu audytu
+            const oldPatient = db.prepare('SELECT * FROM patients WHERE id = ?').get(patientId);
+            if (!oldPatient) return next(createError(404, 'Nie znaleziono pacjenta'));
+
+            // 2. Startujemy twardą transakcję, by zachować absolutną spójność
+            db.exec('BEGIN TRANSACTION');
+
+            // 3. Najpierw usuwamy z bazy wszystkie wizyty tego pacjenta (zwalnia klucz obcy)
+            db.prepare('DELETE FROM visits WHERE patientId = ?').run(patientId);
+
+            // 4. Teraz bezpiecznie usuwamy samego pacjenta
+            db.prepare('DELETE FROM patients WHERE id = ?').run(patientId);
+
+            db.exec('COMMIT');
+
+            // 5. Zostawiamy niezatarty ślad w audycie
+            AuditService.log(db, (req as any).user, 'DELETE', 'PATIENT', patientId, oldPatient, null, 'Usunięto pacjenta oraz całą jego historię wizyt');
+
+            res.json({ message: 'Pacjent i jego wizyty zostali trwale usunięci.' });
         } catch (err) {
+            db.exec('ROLLBACK'); // W razie awarii cofamy wszystko
             next(err);
         }
     });

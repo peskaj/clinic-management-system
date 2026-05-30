@@ -26,6 +26,7 @@
     "date-fns": "^4.3.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "pdfmake": "^0.3.9",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

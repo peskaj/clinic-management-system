@@ -17,13 +17,17 @@ export function initDoctorApi(app: Application, db: DatabaseSync) {
 
     // 2. Pobieranie wszystkich lekarzy
     app.get('/api/doctors', requireAuth(), (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const doctors = db.prepare('SELECT * FROM doctors').all();
-        res.json(doctors);
-    } catch (err) {
-        next(err);
-    }
-});
+        try {
+            const doctors = db.prepare(`
+                SELECT d.id, d.firstname, d.lastname, d.specialization, d.roomId, r.name AS roomName 
+                FROM doctors d
+                LEFT JOIN rooms r ON d.roomId = r.id
+            `).all();
+            res.json(doctors);
+        } catch (err) {
+            next(err);
+        }
+    });
 
     // 3. Dodawanie nowego lekarza
     app.post('/api/doctors', requireAuth(0), (req: Request, res: Response, next: NextFunction) => {
